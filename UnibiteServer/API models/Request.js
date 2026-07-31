@@ -1,0 +1,137 @@
+const ControllerHelpers = require('../Helpers/ControllerHelpers');
+
+/**
+ * Represents the portion request from a user
+ */
+class Request{
+
+    /**
+     ** Default constructor
+     * @param {int} listingId The listing id
+     * @param {int} consumerId The consumer id
+     * @param {double} portion The requested portion
+     */
+    constructor(listingId, consumerId, portion=1) {
+        this.listingId = listingId;
+        this.consumerId = consumerId;
+        this.portion = portion;
+    }
+
+    /**
+     ** Creates a portion request
+     */
+    Create() {
+
+        let dateTimeNow = ControllerHelpers.GetCurrentDateTime();
+
+        let dateCreated = dateTimeNow;
+        let dateUpdated = dateTimeNow;
+
+        let query = `
+            INSERT INTO requests(listingId, consumerId, dateCreated, dateUpdated, dateCollected, isApproved, isDelivered, portion)
+            VALUES(${this.listingId}, ${this.consumerId}, '${dateCreated}', '${dateUpdated}', NULL, NULL, NULL, ${this.portion});
+        `;
+
+        return query;
+    }
+
+    /**
+     ** Creates multiple portion requests
+     * @param {string} valuesString The values
+     */
+    static BulkCreate(valuesString) {
+        let query = `INSERT INTO requests(listingId, consumerId, dateCreated, dateUpdated, dateCollected, isApproved, isDelivered, portion) VALUES ${valuesString};`;
+
+        return query;
+    }
+
+    /**
+     ** Gets all the portion requests
+     */
+    static GetAll() {
+        let query = `SELECT * FROM requests`;
+
+        return query;
+    }
+
+    /**
+     ** Gets the portion request with the specified id
+     * @param {int} id The id
+     */
+    static GetById(id) {
+        let query = `SELECT * FROM requests WHERE id = ${id};`;
+
+        return query;
+    }
+
+    /**
+     ** Gets all the portion requests for the specified listing
+     * @param {int} listingId The listing id
+     */
+    static GetByListingId(listingId) {
+        let query = `SELECT * FROM requests WHERE listingId = ${listingId};`;
+
+        return query;
+    }
+
+    /**
+     ** Gets all the portion requests for the specified consumer
+     * @param {int} consumerId The consumer id
+     */
+    static GetByConsumerId(consumerId) {
+        let query = `SELECT * FROM requests WHERE consumerId = ${consumerId};`;
+
+        return query;
+    }
+
+    /**
+     ** Updates the portion request
+     * @param {int} id The id
+     * @param {boolean} newIsApproved TRUE if the request is approved
+     * @param {boolean} newIsDelivered TRUE if the portion is delivered
+     * @param {Date|string} newDateCollected The collection date and time
+     * @param {double} newPortion The requested portion
+     * @returns The SQL query
+     */
+    static UpdateById(id, newIsApproved, newIsDelivered, newDateCollected, newPortion) {
+
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        let isApproved = newIsApproved === null || newIsApproved === undefined
+            ? "NULL"
+            : newIsApproved ? 1 : 0;
+
+        let isDelivered = newIsDelivered === null || newIsDelivered === undefined
+            ? "NULL"
+            : newIsDelivered ? 1 : 0;
+
+        let dateCollected = newDateCollected === null || newDateCollected === undefined || newDateCollected === ""
+            ? "NULL"
+            : `'${newDateCollected}'`;
+
+
+        let query = `UPDATE requests SET
+            isApproved = ${isApproved},
+            isDelivered = ${isDelivered},
+            dateCollected = ${dateCollected},
+            portion = ${newPortion},
+            dateUpdated = "${dateUpdated}"
+            WHERE id = ${id};`;
+
+        return query;
+    }
+
+    /**
+     ** Deletes the portion request
+     * @param {int} id The id
+     * @returns The SQL query
+     */
+    static DeleteById(id) {
+
+        let query = `DELETE FROM requests WHERE id = ${id};`;
+
+        return query;
+    }
+}
+
+module.exports = Request;
