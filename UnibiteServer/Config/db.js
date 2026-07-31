@@ -1,5 +1,5 @@
 // Get the MySQL driver module
-var mysqlModule = require("mysql");
+var mysqlModule = require("mysql2");
 
 
 // Create the MySQL connection
