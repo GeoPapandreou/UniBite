@@ -24,7 +24,7 @@ exports.GetAllListings = async (req, res, next) => {
  */
 exports.CreateNewListing = async (req, res, next) => {
 
-    let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.pickupDateTime, req.body.isActive);
+    let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.pickupDateTime, req.body.isActive);
 
     // Gets the SQL query for creating the listing
     let query = listing.Create();
@@ -56,7 +56,7 @@ exports.GetListingById = async (req, res, next) => {
  */
 exports.UpdateListingById = async (req, res, next) => {
 
-    let query = Listing.UpdateById(req.params.id, req.body.title, req.body.notes, req.body.photo, req.body.portions, req.body.pickupLocation, req.body.pickupDateTime, req.body.isActive);
+    let query = Listing.UpdateById(req.params.id, req.body.title, req.body.notes, req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.pickupDateTime, req.body.isActive);
 
     var result = await GetQueryResultAsync(query);
 

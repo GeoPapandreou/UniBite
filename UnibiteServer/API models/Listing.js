@@ -13,16 +13,20 @@ class Listing{
      * @param {Blob} photo The listing photo
      * @param {double} portions The available portions
      * @param {string} pickupLocation The pickup location
+     * @param {number} latitude The pickup latitude
+     * @param {number} longitude The pickup longitude
      * @param {Date|string} pickupDateTime The pickup date and time
      * @param {boolean} isActive TRUE if the listing is active
      */
-    constructor(cookId, title, notes, photo, portions, pickupLocation, pickupDateTime, isActive = true) {
+    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, pickupDateTime, isActive = true) {
         this.cookId = cookId;
         this.title = title;
         this.notes = notes;
         this.photo = photo;
         this.portions = portions;
         this.pickupLocation = pickupLocation;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.pickupDateTime = pickupDateTime;
         this.isActive = isActive;
     }
@@ -52,8 +56,8 @@ class Listing{
         let isActive = this.isActive ? 1 : 0;
 
         let query = `
-            INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, pickupDateTime, isActive)
-            VALUES(${this.cookId}, '${dateCreated}', '${dateUpdated}', '${this.title}', ${notes}, ${photo}, ${this.portions}, '${this.pickupLocation}', '${this.pickupDateTime}', ${isActive});
+            INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, pickupDateTime, isActive)
+            VALUES(${this.cookId}, '${dateCreated}', '${dateUpdated}', '${this.title}', ${notes}, ${photo}, ${this.portions}, '${this.pickupLocation}', ${this.latitude}, ${this.longitude}, '${this.pickupDateTime}', ${isActive});
         `;
 
         return query;
@@ -64,7 +68,7 @@ class Listing{
      * @param {string} valuesString The values
      */
     static BulkCreate(valuesString) {
-        let query = `INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, pickupDateTime, isActive) VALUES ${valuesString};`;
+        let query = `INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, pickupDateTime, isActive) VALUES ${valuesString};`;
 
         return query;
     }
@@ -96,11 +100,13 @@ class Listing{
      * @param {Blob} newPhoto The new photo
      * @param {double} newPortions The new available portions
      * @param {string} newPickupLocation The new pickup location
+     * @param {number} newLatitude The new pickup latitude
+     * @param {number} newLongitude The new pickup longitude
      * @param {Date|string} newPickupDateTime The new pickup date and time
      * @param {boolean} newIsActive TRUE if the listing is active
      * @returns The SQL query
      */
-    static UpdateById(id, newTitle, newNotes, newPhoto, newPortions, newPickupLocation, newPickupDateTime, newIsActive) {
+    static UpdateById(id, newTitle, newNotes, newPhoto, newPortions, newPickupLocation, newLatitude, newLongitude, newPickupDateTime, newIsActive) {
 
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
@@ -124,6 +130,8 @@ class Listing{
             photo = ${photo},
             portions = ${newPortions},
             pickupLocation = "${newPickupLocation}",
+            latitude = ${newLatitude},
+            longitude = ${newLongitude},
             pickupDateTime = "${newPickupDateTime}",
             isActive = ${isActive},
             dateUpdated = "${dateUpdated}"
