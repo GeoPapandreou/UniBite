@@ -1,17 +1,55 @@
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
+import TextField from "@mui/material/TextField";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 
-const TextInput = () => {
-  return (
-    <Box
-      component="form"
-      sx={{ '& > :not(style)': { m: 1, width: '25ch' } }}
-      noValidate
-      autoComplete="off"
-    >
-      <TextField id="outlined-basic" label="Outlined" variant="outlined" />
-    </Box>
-  );
-}
+import Constants from "../../Shared/Constants";
+
+const theme = createTheme({
+    palette: {
+        primary: {
+          light: "#9cc9e1",
+          main: "#84BCDA",
+          dark: "#5c8398",
+          contrastText: "#F5F5F5",
+        },
+        secondary: {
+          light: "#f4cd71",
+          main: "#F2C14E",
+          dark: "#a98736",
+          contrastText: "#F5F5F5",
+        }
+      },
+});
+
+const textInputStyle = {
+    boxShadow: Constants.BoxShadow,
+    borderRadius: "4px",
+    overflow: "hidden",
+    backgroundColor: `#${Constants.White}`
+};
+
+const TextInput = ({ 
+        Text, 
+        OnTextChanged, 
+        Hint = "hint", 
+        HasFloatingHint = false,
+        HasFullWidth = false,
+        Theme = theme,
+        ThemeColor = "primary" 
+    }) => {
+    return(
+        <div className="textInput" >
+            <ThemeProvider theme={Theme}>
+                <TextField style={textInputStyle}
+                        color={ThemeColor}
+                        variant="outlined" 
+                        value={Text}
+                        onChange={OnTextChanged}
+                        label={Text === "" ? Hint : ""} 
+                        slotProps={{inputLabel: {shrink: HasFloatingHint}}}
+                        fullWidth={HasFullWidth}/>
+            </ThemeProvider>
+        </div>
+    );
+};
 
 export default TextInput;

@@ -1,17 +1,32 @@
 import Button from "@mui/material/Button";
+import SvgIcon from "@mui/material/SvgIcon";
+
 import Constants from "../../Shared/Constants";
 
+const MenuButton = ({
+    OnClick,
+    Text,
+    VectorSource,
+    Color = Constants.Gray,
+}) => {
+    const menuButtonStyle = {
+        width: "100%",
+        padding: "1em",
+        color: `#${Color}`
+    };
 
-// Navigation Buttons for the Menu Page
-const MenuButton = ({OnClick, Text, Color = Constants.Gray}) => {
-  return (
-    <Button
-      variant="contained"
-      onClick={OnClick}
-      sx={{backgroundColor: `#${Color}`}}>
-      {Text}
-    </Button>
-  );
+    return(
+        <div className="menuButtonContainer">
+            <Button id="menuButton" style={menuButtonStyle} onClick={OnClick}>
+                <div className="menuButtonContent">
+                    <SvgIcon>
+                        <path fill={`#${Color}`} d={VectorSource}/>
+                    </SvgIcon>
+                    <span className="menuButtonText">{Text}</span>
+                </div>
+            </Button>
+        </div>
+    );
 };
 
 export default MenuButton;
