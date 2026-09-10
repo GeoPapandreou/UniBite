@@ -19,9 +19,11 @@ const MenuButton = ({
         <div className="menuButtonContainer">
             <Button id="menuButton" style={menuButtonStyle} onClick={OnClick}>
                 <div className="menuButtonContent">
-                    <SvgIcon>
-                        <path fill={`#${Color}`} d={VectorSource}/>
-                    </SvgIcon>
+                    {VectorSource && (
+                        <SvgIcon>
+                            <path fill={`#${Color}`} d={VectorSource}/>
+                        </SvgIcon>
+                    )}
                     <span className="menuButtonText">{Text}</span>
                 </div>
             </Button>

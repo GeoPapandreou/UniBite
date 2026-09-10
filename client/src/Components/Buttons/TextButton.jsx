@@ -26,7 +26,8 @@ const TextButton = ({
     BorderRadius = "50%",
     Color= Constants.White,
     BackColor = Constants.LightBlue,
-    IsRaised = true
+    IsRaised = true,
+    Disabled = false
 }) => {
     const textButtonStyle = {
         color: `#${Color}`,
@@ -38,7 +39,8 @@ const TextButton = ({
     return(
         <Button id="textButton"
             style={{...textButtonContainerStyle, ...textButtonStyle}}
-            onClick={OnClick}>
+            onClick={OnClick}
+            disabled={Disabled}>
             <div style={textButtonContentStyle}>
                 <span>{Text}</span>
             </div>

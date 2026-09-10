@@ -28,7 +28,8 @@ const textInputStyle = {
 };
 
 const TextInput = ({ 
-        Text, 
+        Text,
+        Type = "text",
         OnTextChanged, 
         Hint = "hint", 
         HasFloatingHint = false,
@@ -43,6 +44,7 @@ const TextInput = ({
                         color={ThemeColor}
                         variant="outlined" 
                         value={Text}
+                        type={Type}
                         onChange={OnTextChanged}
                         label={Text === "" ? Hint : ""} 
                         slotProps={{inputLabel: {shrink: HasFloatingHint}}}

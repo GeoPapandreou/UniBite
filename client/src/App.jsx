@@ -1,23 +1,36 @@
-import MenuButton from "./Components/Buttons/MenuButton";
-import Constants from "./Shared/Constants";
-import TextButton from "./Components/Buttons/TextButton";
-import Loading from "./Components/Animations/Loading";
-import TextInput from "./Components/Inputs/TextInput";
-import SingleDatePicker from "./Components/DateTimePickers/SingleDatePicker";
-import SingleTimePicker from "./Components/DateTimePickers/SingleTimePicker";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
+import ProfilePage from "./Pages/User/ProfilePage";
+import LoginPage from "./Pages/LoginRegisterForms/LoginPage";
+import RegisterPage from "./Pages/LoginRegisterForms/RegisterPage";
+import HomePage from "./Pages/User/HomePage";
+import RequestsPage from "./Pages/User/RequestsPage";
+import StatisticsPage from "./Pages/Admin/StatisticsPage";
+import LeaderboardPage from "./Pages/Admin/LeaderboardPage";
+import LayoutPage from "./Pages/LayoutPage";
 
+const App = () => {
+    return(
+        <>
+            <Router>
+                <Routes>
+                    <Route path="/" element={<LoginPage/>}/>
+                    <Route path="sign-up" element={<RegisterPage/>}/>
 
-function App() {
-  return (
-    <div className="App" style={{ backgroundColor: `#${Constants.White}` }}>
-      <TextButton Text="Menu"/>
-      <MenuButton Text="Accept"/>
-      <TextInput/>
-      <SingleDatePicker Label="Date"/>
-      <SingleTimePicker Label="Time"/>
-    </div>  
-  )
-}
+                    <Route path="admins/:adminId" element={<LayoutPage/>}>
+                        <Route path="statistics" element={<StatisticsPage/>}/>
+                        <Route path="leaderboard" element={<LeaderboardPage/>}/>
+                    </Route>
+
+                    <Route path="users/:userId" element={<LayoutPage/>}>
+                        <Route path="home" element={<HomePage/>}/>
+                        <Route path="requests" element={<RequestsPage/>}/>
+                        <Route path="profile" element={<ProfilePage/>}/>
+                    </Route>
+                </Routes>
+            </Router>
+        </>
+    );
+};
 
 export default App;

@@ -109,3 +109,80 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.page {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 4rem);
+  display: grid;
+  grid-template-rows: 100%;
+  grid-template-columns: auto 1fr;
+}
+
+.sideMenu {
+  position: relative;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  min-width: 40px;
+  height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  box-shadow: 1px 0 5px 0 rgba(0, 0, 0, 0.3);
+}
+
+.menuButtonContainer {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.menuButtonContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  text-transform: capitalize;
+  font-family: Calibri, sans-serif;
+  font-size: 160%;
+}
+
+.menuExitButton {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  border-style: solid;
+  border-width: 1px 0 0;
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.textInput {
+  width: 100%;
+}
+
+@media (max-width: 800px) {
+  .sideMenu {
+    width: 40px;
+  }
+
+  #menuButton {
+    width: 40px;
+    min-width: 40px;
+    padding: 1em 0;
+  }
+
+  .menuButtonContent {
+    width: 40px;
+    justify-content: center;
+  }
+
+  .menuButtonText {
+    display: none;
+  }
+}
