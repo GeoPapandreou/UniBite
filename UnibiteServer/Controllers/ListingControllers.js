@@ -24,7 +24,12 @@ exports.GetAllListings = async (req, res, next) => {
  */
 exports.CreateNewListing = async (req, res, next) => {
 
-    let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.pickupDateTime, req.body.isActive);
+    // The optional photo is sent as a data URL and stored in the existing BLOB.
+    if(req.body.photo != null && (typeof req.body.photo !== "string" || Buffer.byteLength(req.body.photo) > 65535)) {
+        return res.status(400).json({ message: "The photo is too large. Please choose a smaller image." });
+    }
+
+    let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, req.body.pickupAvailability);
 
     // Gets the SQL query for creating the listing
     let query = listing.Create();
@@ -56,7 +61,7 @@ exports.GetListingById = async (req, res, next) => {
  */
 exports.UpdateListingById = async (req, res, next) => {
 
-    let query = Listing.UpdateById(req.params.id, req.body.title, req.body.notes, req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.pickupDateTime, req.body.isActive);
+    let query = Listing.UpdateById(req.params.id, req.body.title, req.body.notes, req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, req.body.pickupAvailability);
 
     var result = await GetQueryResultAsync(query);
 

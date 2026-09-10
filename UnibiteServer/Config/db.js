@@ -16,13 +16,13 @@ const MySQLConnection = mysqlModule.createConnection({
  */
 const GetQueryResultAsync = async (mySQLQuery) => {
     // Return the query's execution result, wrapped in a promise object
-    return new Promise((data) => {
+    return new Promise((data, reject) => {
         // Execute the query
         MySQLConnection.query(mySQLQuery, function (error, result) {
             // If there was an error...
             if (error) {
-                // Throw the error
-                throw error;
+                // Reject the request without stopping the server.
+                return reject(error);
             }
 
             // Try to return the results

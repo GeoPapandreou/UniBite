@@ -24,7 +24,7 @@ exports.GetAllRequests = async (req, res, next) => {
  */
 exports.CreateNewRequest = async (req, res, next) => {
 
-    let portionRequest = new Request(req.body.listingId, req.body.consumerId, req.body.portion);
+    let portionRequest = new Request(req.body.listingId, req.body.consumerId, req.body.pickupDateTime, req.body.portion);
 
     // Gets the SQL query for creating the portion request
     let query = portionRequest.Create();
@@ -56,7 +56,7 @@ exports.GetRequestById = async (req, res, next) => {
  */
 exports.UpdateRequestById = async (req, res, next) => {
 
-    let query = Request.UpdateById(req.params.id, req.body.isApproved, req.body.isDelivered, req.body.dateCollected, req.body.portion);
+    let query = Request.UpdateById(req.params.id, req.body.isApproved, req.body.isDelivered, req.body.dateCollected, req.body.portion, req.body.pickupDateTime);
 
     var result = await GetQueryResultAsync(query);
 

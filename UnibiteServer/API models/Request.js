@@ -9,11 +9,13 @@ class Request{
      ** Default constructor
      * @param {int} listingId The listing id
      * @param {int} consumerId The consumer id
+     * @param {string} pickupDateTime The proposed pickup date and time
      * @param {double} portion The requested portion
      */
-    constructor(listingId, consumerId, portion=1) {
+    constructor(listingId, consumerId, pickupDateTime, portion=1) {
         this.listingId = listingId;
         this.consumerId = consumerId;
+        this.pickupDateTime = pickupDateTime;
         this.portion = portion;
     }
 
@@ -28,8 +30,8 @@ class Request{
         let dateUpdated = dateTimeNow;
 
         let query = `
-            INSERT INTO requests(listingId, consumerId, dateCreated, dateUpdated, dateCollected, isApproved, isDelivered, portion)
-            VALUES(${this.listingId}, ${this.consumerId}, '${dateCreated}', '${dateUpdated}', NULL, NULL, NULL, ${this.portion});
+            INSERT INTO requests(listingId, consumerId, dateCreated, dateUpdated, pickupDateTime, dateCollected, isApproved, isDelivered, portion)
+            VALUES(${this.listingId}, ${this.consumerId}, '${dateCreated}', '${dateUpdated}', '${this.pickupDateTime}', NULL, NULL, NULL, ${this.portion});
         `;
 
         return query;
@@ -40,7 +42,7 @@ class Request{
      * @param {string} valuesString The values
      */
     static BulkCreate(valuesString) {
-        let query = `INSERT INTO requests(listingId, consumerId, dateCreated, dateUpdated, dateCollected, isApproved, isDelivered, portion) VALUES ${valuesString};`;
+        let query = `INSERT INTO requests(listingId, consumerId, dateCreated, dateUpdated, pickupDateTime, dateCollected, isApproved, isDelivered, portion) VALUES ${valuesString};`;
 
         return query;
     }
@@ -91,9 +93,10 @@ class Request{
      * @param {boolean} newIsDelivered TRUE if the portion is delivered
      * @param {Date|string} newDateCollected The collection date and time
      * @param {double} newPortion The requested portion
+     * @param {string} newPickupDateTime The proposed pickup date and time, unchanged if omitted
      * @returns The SQL query
      */
-    static UpdateById(id, newIsApproved, newIsDelivered, newDateCollected, newPortion) {
+    static UpdateById(id, newIsApproved, newIsDelivered, newDateCollected, newPortion, newPickupDateTime) {
 
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
@@ -109,10 +112,15 @@ class Request{
             ? "NULL"
             : `'${newDateCollected}'`;
 
+        // Keep the existing pickup time when it is not included in the update
+        let pickupDateTime = newPickupDateTime === undefined
+            ? "pickupDateTime"
+            : `'${newPickupDateTime}'`;
 
         let query = `UPDATE requests SET
             isApproved = ${isApproved},
             isDelivered = ${isDelivered},
+            pickupDateTime = ${pickupDateTime},
             dateCollected = ${dateCollected},
             portion = ${newPortion},
             dateUpdated = "${dateUpdated}"

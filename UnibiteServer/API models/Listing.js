@@ -15,10 +15,10 @@ class Listing{
      * @param {string} pickupLocation The pickup location
      * @param {number} latitude The pickup latitude
      * @param {number} longitude The pickup longitude
-     * @param {Date|string} pickupDateTime The pickup date and time
      * @param {boolean} isActive TRUE if the listing is active
+     * @param {string} pickupAvailability The optional pickup availability
      */
-    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, pickupDateTime, isActive = true) {
+    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive = true, pickupAvailability = null) {
         this.cookId = cookId;
         this.title = title;
         this.notes = notes;
@@ -27,8 +27,8 @@ class Listing{
         this.pickupLocation = pickupLocation;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.pickupDateTime = pickupDateTime;
         this.isActive = isActive;
+        this.pickupAvailability = pickupAvailability;
     }
 
     /**
@@ -55,9 +55,14 @@ class Listing{
 
         let isActive = this.isActive ? 1 : 0;
 
+        // Pickup availability is nullable in the database
+        let pickupAvailability = this.pickupAvailability === null || this.pickupAvailability === undefined || this.pickupAvailability === ""
+            ? "NULL"
+            : `'${this.pickupAvailability}'`;
+
         let query = `
-            INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, pickupDateTime, isActive)
-            VALUES(${this.cookId}, '${dateCreated}', '${dateUpdated}', '${this.title}', ${notes}, ${photo}, ${this.portions}, '${this.pickupLocation}', ${this.latitude}, ${this.longitude}, '${this.pickupDateTime}', ${isActive});
+            INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive, pickupAvailability)
+            VALUES(${this.cookId}, '${dateCreated}', '${dateUpdated}', '${this.title}', ${notes}, ${photo}, ${this.portions}, '${this.pickupLocation}', ${this.latitude}, ${this.longitude}, ${isActive}, ${pickupAvailability});
         `;
 
         return query;
@@ -68,7 +73,7 @@ class Listing{
      * @param {string} valuesString The values
      */
     static BulkCreate(valuesString) {
-        let query = `INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, pickupDateTime, isActive) VALUES ${valuesString};`;
+        let query = `INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive, pickupAvailability) VALUES ${valuesString};`;
 
         return query;
     }
@@ -102,11 +107,11 @@ class Listing{
      * @param {string} newPickupLocation The new pickup location
      * @param {number} newLatitude The new pickup latitude
      * @param {number} newLongitude The new pickup longitude
-     * @param {Date|string} newPickupDateTime The new pickup date and time
      * @param {boolean} newIsActive TRUE if the listing is active
+     * @param {string} newPickupAvailability The new pickup availability
      * @returns The SQL query
      */
-    static UpdateById(id, newTitle, newNotes, newPhoto, newPortions, newPickupLocation, newLatitude, newLongitude, newPickupDateTime, newIsActive) {
+    static UpdateById(id, newTitle, newNotes, newPhoto, newPortions, newPickupLocation, newLatitude, newLongitude, newIsActive, newPickupAvailability) {
 
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
@@ -124,6 +129,11 @@ class Listing{
 
         let isActive = newIsActive ? 1 : 0;
 
+        // Pickup availability is nullable in the database
+        let pickupAvailability = newPickupAvailability === null || newPickupAvailability === undefined || newPickupAvailability === ""
+            ? "NULL"
+            : `'${newPickupAvailability}'`;
+
         let query = `UPDATE listings SET
             title = "${newTitle}",
             notes = ${notes},
@@ -132,8 +142,8 @@ class Listing{
             pickupLocation = "${newPickupLocation}",
             latitude = ${newLatitude},
             longitude = ${newLongitude},
-            pickupDateTime = "${newPickupDateTime}",
             isActive = ${isActive},
+            pickupAvailability = ${pickupAvailability},
             dateUpdated = "${dateUpdated}"
             WHERE id = ${id};`;
 
