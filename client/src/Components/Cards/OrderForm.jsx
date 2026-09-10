@@ -4,6 +4,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 
 import Constants from "../../Shared/Constants";
+import Helpers from "../../Shared/Helpers";
 import TextButton from "../Buttons/TextButton";
 import SingleDatePicker from "../DateTimePickers/SingleDatePicker";
 import SingleTimePicker from "../DateTimePickers/SingleTimePicker";
@@ -46,6 +47,7 @@ const orderButtonsStyle = {
 const OrderForm = ({
     IsOpen,
     ListingTitle,
+    PickupAvailability = "",
     AvailablePortions = 1,
     OnConfirm,
     OnClose
@@ -56,8 +58,8 @@ const OrderForm = ({
 
     const isFormValid = Number(portions) > 0 &&
         Number(portions) <= AvailablePortions &&
-        pickupDate !== null &&
-        pickupTime !== null;
+        pickupDate instanceof Date && !Number.isNaN(pickupDate.getTime()) &&
+        pickupTime instanceof Date && !Number.isNaN(pickupTime.getTime());
 
     const ChangePortions = (event) => {
         const newPortions = event.target.value;
@@ -75,10 +77,17 @@ const OrderForm = ({
     };
 
     const ConfirmOrder = () => {
+        if(!isFormValid) {
+            return;
+        }
+
+        // Combine the requested pickup date and time using the existing date helper.
+        const pickupDateTime = new Date(pickupDate);
+        pickupDateTime.setHours(pickupTime.getHours(), pickupTime.getMinutes(), 0, 0);
+
         OnConfirm({
             Portions: Number(portions),
-            PickupDate: pickupDate,
-            PickupTime: pickupTime
+            PickupDateTime: Helpers.FormatDateTime(pickupDateTime)
         });
 
         CloseOrderForm();
@@ -94,6 +103,15 @@ const OrderForm = ({
                         Available portions: {AvailablePortions}
                     </p>
 
+                    {PickupAvailability && (
+                        <div>
+                            <p style={availablePortionsStyle}>Cook's availability:</p>
+                            <p style={{...availablePortionsStyle, whiteSpace: "pre-wrap", overflowWrap: "anywhere"}}>
+                                {PickupAvailability}
+                            </p>
+                        </div>
+                    )}
+
                     <TextInput
                         Text={portions}
                         OnTextChanged={ChangePortions}
@@ -101,6 +119,10 @@ const OrderForm = ({
                         HasFloatingHint={true}
                         HasFullWidth={true}
                     />
+
+                    <p style={availablePortionsStyle}>
+                        Choose a pickup date and time for the cook to approve.
+                    </p>
 
                     <SingleDatePicker OnDateChanged={setPickupDate}/>
                     <SingleTimePicker OnTimeChanged={setPickupTime}/>

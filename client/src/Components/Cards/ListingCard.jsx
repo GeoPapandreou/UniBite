@@ -65,7 +65,8 @@ const notesStyle = {
 const allergensStyle = {
     display: "flex",
     flexWrap: "wrap",
-    gap: "8px"
+    gap: "8px",
+    fontSize: "14px"
 };
 
 const orderButtonStyle = {
@@ -116,7 +117,7 @@ const ListingCard = ({
                             <AllergenChip
                                 key={Allergen.id}
                                 Text={Allergen.name}
-                                Size="medium"
+                                Size="small"
                             />
                         ))}
                     </div>

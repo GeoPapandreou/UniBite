@@ -32,8 +32,9 @@ const TextInput = ({
         Type = "text",
         OnTextChanged, 
         Hint = "hint", 
-        HasFloatingHint = false,
         HasFullWidth = false,
+        Multiline = false,
+        Rows = 1,
         Theme = theme,
         ThemeColor = "primary" 
     }) => {
@@ -45,9 +46,11 @@ const TextInput = ({
                         variant="outlined" 
                         value={Text}
                         type={Type}
+                        multiline={Multiline}
+                        rows={Rows}
                         onChange={OnTextChanged}
-                        label={Text === "" ? Hint : ""} 
-                        slotProps={{inputLabel: {shrink: HasFloatingHint}}}
+                        placeholder={Hint}
+                        slotProps={{htmlInput: {"aria-label": Hint}}}
                         fullWidth={HasFullWidth}/>
             </ThemeProvider>
         </div>
