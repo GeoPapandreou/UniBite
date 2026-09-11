@@ -49,6 +49,7 @@ const OrderForm = ({
     ListingTitle,
     PickupAvailability = "",
     AvailablePortions = 1,
+    IsSaving = false,
     OnConfirm,
     OnClose
 }) => {
@@ -70,6 +71,8 @@ const OrderForm = ({
     };
 
     const CloseOrderForm = () => {
+        if(IsSaving) return;
+
         setPortions("");
         setPickupDate(null);
         setPickupTime(null);
@@ -77,7 +80,7 @@ const OrderForm = ({
     };
 
     const ConfirmOrder = () => {
-        if(!isFormValid) {
+        if(!isFormValid || IsSaving) {
             return;
         }
 
@@ -90,14 +93,14 @@ const OrderForm = ({
             PickupDateTime: Helpers.FormatDateTime(pickupDateTime)
         });
 
-        CloseOrderForm();
+        // The parent closes the form after the request is saved successfully.
     };
 
     return(
         <Dialog open={IsOpen} onClose={CloseOrderForm}>
             <DialogContent>
                 <div className="orderForm" style={orderFormStyle}>
-                    <h2 style={titleStyle}>Order {ListingTitle}</h2>
+                    <h2 style={titleStyle}> {ListingTitle}</h2>
 
                     <p style={availablePortionsStyle}>
                         Available portions: {AvailablePortions}
@@ -135,15 +138,16 @@ const OrderForm = ({
                             Color={Constants.White}
                             BackColor={Constants.Gray}
                             IsRaised={false}
+                            Disabled={IsSaving}
                         />
                         <TextButton
-                            Text="Confirm"
+                            Text={IsSaving ? "Sending..." : "Confirm"}
                             OnClick={ConfirmOrder}
                             BorderRadius="8px"
                             Color={Constants.White}
                             BackColor={Constants.Green}
                             IsRaised={false}
-                            Disabled={!isFormValid}
+                            Disabled={!isFormValid || IsSaving}
                         />
                     </div>
                 </div>

@@ -20,6 +20,7 @@ const emptyMessageStyle = {
 const Requests = ({
     RequestsData = [],
     CurrentUserId,
+    IsSaving = false,
     OnAccept,
     OnDecline,
     OnCancel
@@ -38,10 +39,14 @@ const Requests = ({
                     ListingTitle={Request.listingTitle}
                     RequesterName={Request.requesterName}
                     Portions={Request.portion}
+                    PickupDateTime={Request.pickupDateTime}
+                    PickupLocation={Request.pickupLocation}
+                    IsApproved={Request.isApproved}
                     IsListingOwner={CurrentUserId === Request.cookId}
-                    OnAccept={() => OnAccept(Request)}
-                    OnDecline={() => OnDecline(Request)}
-                    OnCancel={() => OnCancel(Request)}
+                    IsSaving={IsSaving}
+                    OnAccept={OnAccept ? () => OnAccept(Request) : undefined}
+                    OnDecline={OnDecline ? () => OnDecline(Request) : undefined}
+                    OnCancel={OnCancel ? () => OnCancel(Request) : undefined}
                 />
             ))}
         </div>

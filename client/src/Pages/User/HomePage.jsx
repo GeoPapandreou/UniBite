@@ -27,6 +27,13 @@ const titleStyle = {
     fontWeight: 600
 };
 
+const messageStyle = {
+    margin: 0,
+    color: `#${Constants.Green}`,
+    fontFamily: Constants.FontFamily,
+    fontSize: "16px"
+};
+
 /**
  ** Gets the listings and their allergens for the user's university
  */
@@ -46,7 +53,8 @@ const GetListings = async(UniversityId) => {
         responses.map(Response => Response.json())
     );
 
-    return listings.filter(Listing => Listing.isActive && users.some(User =>
+    return listings.filter(Listing => Listing.isActive &&
+        Date.now() - new Date(Listing.dateCreated).getTime() < 48 * 60 * 60 * 1000 && users.some(User =>
         User.id === Listing.cookId && User.universityId === UniversityId
     )).map(Listing => ({
         ...Listing,
@@ -60,9 +68,7 @@ const GetListings = async(UniversityId) => {
     }));
 };
 
-const HomePage = ({
-    OnOrder
-}) => {
+const HomePage = () => {
     const location = useLocation();
     const userData = location.state.userData;
     const [listings, setListings] = useState([]);
@@ -72,6 +78,8 @@ const HomePage = ({
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [isOrdering, setIsOrdering] = useState(false);
+    const [orderMessage, setOrderMessage] = useState("");
 
     useEffect(() => {
         let isMounted = true;
@@ -87,7 +95,17 @@ const HomePage = ({
                 if(isMounted) setIsLoading(false);
             });
 
-        return () => { isMounted = false; };
+        // Remove newly expired listings while the homepage stays open.
+        const expiryCheck = setInterval(() => {
+            setListings(ListingsData => ListingsData.filter(Listing =>
+                Date.now() - new Date(Listing.dateCreated).getTime() < 48 * 60 * 60 * 1000
+            ));
+        }, 60 * 1000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(expiryCheck);
+        };
     }, [userData.universityId]);
 
     /**
@@ -211,6 +229,14 @@ const HomePage = ({
     };
 
     const OpenOrderForm = (Listing) => {
+        setOrderMessage("");
+        setErrorMessage("");
+
+        if(Listing.cookId === userData.id) {
+            setErrorMessage("You cannot order your own listing.");
+            return;
+        }
+
         setSelectedListing(Listing);
     };
 
@@ -218,9 +244,40 @@ const HomePage = ({
         setSelectedListing(null);
     };
 
-    const ConfirmOrder = (OrderData) => {
-        if(OnOrder) {
-            OnOrder(selectedListing, OrderData);
+    /**
+     ** Saves a pending request without reducing the listing's portions
+     */
+    const ConfirmOrder = async(OrderData) => {
+        if(isOrdering || !selectedListing) return;
+
+        setIsOrdering(true);
+        setErrorMessage("");
+
+        try {
+            const response = await fetch("/api/Unibite/requests", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    listingId: selectedListing.id,
+                    consumerId: userData.id,
+                    portion: OrderData.Portions,
+                    pickupDateTime: OrderData.PickupDateTime
+                })
+            });
+
+            if(!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not send the request. Please try again.");
+            }
+
+            CloseOrderForm();
+            setOrderMessage("Your request was sent and is waiting for the cook to approve it.");
+        }
+        catch(error) {
+            setErrorMessage(error.message);
+        }
+        finally {
+            setIsOrdering(false);
         }
     };
 
@@ -239,6 +296,8 @@ const HomePage = ({
             />
 
             {isLoading && <Loading/>}
+
+            {orderMessage && <p role="status" style={messageStyle}>{orderMessage}</p>}
 
             <Listings
                 ListingsData={listings}
@@ -261,6 +320,7 @@ const HomePage = ({
                     ListingTitle={selectedListing.title}
                     PickupAvailability={selectedListing.pickupAvailability}
                     AvailablePortions={selectedListing.portions}
+                    IsSaving={isOrdering}
                     OnConfirm={ConfirmOrder}
                     OnClose={CloseOrderForm}
                 />

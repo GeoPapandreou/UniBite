@@ -130,6 +130,55 @@ class Request{
     }
 
     /**
+     ** Accepts or declines a pending request for the specified cook
+     * @param {int} id The request id
+     * @param {int} cookId The listing owner id
+     * @param {boolean} isApproved True = accept, False = decline
+     */
+    static UpdateApprovalById(id, cookId, isApproved) {
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        // Accepting updates the request and remaining portions
+        let portionUpdate = isApproved
+            ? `listing.portions = listing.portions - portionRequest.portion,
+               listing.dateUpdated = '${dateUpdated}',`
+            : "";
+
+        let availabilityCheck = isApproved
+            ? `AND listing.isActive = 1
+               AND listing.dateCreated > DATE_SUB(NOW(), INTERVAL 48 HOUR)
+               AND portionRequest.portion > 0
+               AND listing.portions >= portionRequest.portion`
+            : "";
+
+        let query = `UPDATE requests AS portionRequest
+            INNER JOIN listings AS listing ON listing.id = portionRequest.listingId
+            SET ${portionUpdate}
+                portionRequest.isApproved = ${isApproved ? 1 : 0},
+                portionRequest.dateUpdated = '${dateUpdated}'
+            WHERE portionRequest.id = ${id}
+                AND listing.cookId = ${cookId}
+                AND portionRequest.isApproved IS NULL
+                ${availabilityCheck};`;
+
+        return query;
+    }
+
+    /**
+     ** Deletes a pending request belonging to the specified consumer
+     * @param {int} id The request id
+     * @param {int} consumerId The requester id
+     */
+    static CancelById(id, consumerId) {
+        let query = `DELETE FROM requests
+            WHERE id = ${id}
+                AND consumerId = ${consumerId}
+                AND isApproved IS NULL;`;
+
+        return query;
+    }
+
+    /**
      ** Deletes the portion request
      * @param {int} id The id
      * @returns The SQL query

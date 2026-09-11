@@ -49,11 +49,17 @@ const RequestCard = ({
     ListingTitle,
     RequesterName,
     Portions = 1,
+    PickupDateTime,
+    PickupLocation,
+    IsApproved = null,
     IsListingOwner = false,
+    IsSaving = false,
     OnAccept,
     OnDecline,
     OnCancel
 }) => {
+    const status = IsApproved === null ? "Pending" : Number(IsApproved) === 1 ? "Accepted" : "Declined";
+
     return(
         <Card style={requestCardStyle}>
             <CardContent style={requestContentStyle}>
@@ -67,12 +73,27 @@ const RequestCard = ({
                     Portions: {Portions}
                 </p>
 
+                {PickupDateTime && (
+                    <p style={requestInformationStyle}>
+                        Pickup: {new Date(PickupDateTime).toLocaleString()}
+                    </p>
+                )}
+
+                {PickupLocation && (
+                    <p style={requestInformationStyle}>
+                        Pickup location: {PickupLocation}
+                    </p>
+                )}
+
+                <p style={requestInformationStyle}>Status: {status}</p>
+
                 <div style={requestButtonsStyle}>
                     {IsListingOwner ? (
                         <>
                             <TextButton
                                 Text="Accept"
                                 OnClick={OnAccept}
+                                Disabled={IsSaving || !OnAccept || IsApproved !== null}
                                 BorderRadius="8px"
                                 Color={Constants.White}
                                 BackColor={Constants.Green}
@@ -81,6 +102,7 @@ const RequestCard = ({
                             <TextButton
                                 Text="Decline"
                                 OnClick={OnDecline}
+                                Disabled={IsSaving || !OnDecline || IsApproved !== null}
                                 BorderRadius="8px"
                                 Color={Constants.White}
                                 BackColor={Constants.Red}
@@ -91,6 +113,7 @@ const RequestCard = ({
                         <TextButton
                             Text="Cancel"
                             OnClick={OnCancel}
+                            Disabled={IsSaving || !OnCancel || IsApproved !== null}
                             BorderRadius="8px"
                             Color={Constants.White}
                             BackColor={Constants.Gray}

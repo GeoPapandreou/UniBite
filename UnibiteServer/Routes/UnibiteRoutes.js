@@ -124,12 +124,13 @@ router
   .post(requestControllers.CreateNewRequest);
 
 /**
- * @route GET, PUT and DELETE route -> /requests/:id
+ * @route GET, PUT, PATCH and DELETE route -> /requests/:id
  */
 router
   .route(Routes.RequestRoute)
   .get(requestControllers.GetRequestById)
   .put(requestControllers.UpdateRequestById)
+  .patch(requestControllers.UpdateRequestApproval)
   .delete(requestControllers.DeleteRequestById);
 
 /**
