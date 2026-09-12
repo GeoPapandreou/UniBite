@@ -91,6 +91,12 @@ class Routes {
   static RequestRoute = Routes.RequestsRoute + "/:id";
 
   /**
+   ** The route to record collection or a no show
+   ** /Unibite/requests/2/delivery
+   */
+  static RequestDeliveryRoute = Routes.RequestRoute + "/delivery";
+
+  /**
    ** The ratings' route
    ** /Unibite/ratings
    */

@@ -3,7 +3,7 @@
  */
 class ListingResponseModel {
 
-    constructor(id, cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, isActive, pickupAvailability = null) {
+    constructor(id, cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, isActive, pickupDateTime) {
         this.id = id;
         this.cookId = cookId;
         this.dateCreated = dateCreated;
@@ -14,7 +14,7 @@ class ListingResponseModel {
         this.portions = portions;
         this.pickupLocation = pickupLocation;
         this.isActive = isActive;
-        this.pickupAvailability = pickupAvailability;
+        this.pickupDateTime = pickupDateTime;
     }
 }
 

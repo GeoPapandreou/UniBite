@@ -3,12 +3,14 @@ var mysqlModule = require("mysql2");
 
 
 // Create the MySQL connection
-const MySQLConnection = mysqlModule.createConnection({
+const connectionOptions = {
     host: "localhost",
     user: "root",
     password: "1122",
     database: "unibitedb",
-});
+};
+
+const MySQLConnection = mysqlModule.createConnection(connectionOptions);
 
 /**
  * Executes and returns the result of @param mySQLQuery asynchronously
@@ -39,4 +41,32 @@ const GetQueryResultAsync = async (mySQLQuery) => {
     });
 };
 
+/**
+ * Runs related queries on their own connection, saving all changes or none.
+ */
+const ExecuteTransactionAsync = async (ExecuteQueries) => {
+    const connection = mysqlModule.createConnection(connectionOptions).promise();
+
+    try {
+        await connection.beginTransaction();
+
+        const Query = async (query) => {
+            const [result] = await connection.query(query);
+            return result;
+        };
+
+        const result = await ExecuteQueries(Query);
+        await connection.commit();
+        return result;
+    }
+    catch(error) {
+        await connection.rollback();
+        throw error;
+    }
+    finally {
+        await connection.end();
+    }
+};
+
 module.exports = GetQueryResultAsync;
+module.exports.ExecuteTransactionAsync = ExecuteTransactionAsync;

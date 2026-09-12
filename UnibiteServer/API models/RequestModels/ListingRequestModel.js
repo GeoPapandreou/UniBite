@@ -3,7 +3,7 @@
  */
 class ListingRequestModel {
 
-    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive = true, pickupAvailability = null) {
+    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive = true, pickupDateTime) {
         this.cookId = cookId;
         this.title = title;
         this.notes = notes;
@@ -13,7 +13,7 @@ class ListingRequestModel {
         this.latitude = latitude;
         this.longitude = longitude;
         this.isActive = isActive;
-        this.pickupAvailability = pickupAvailability;
+        this.pickupDateTime = pickupDateTime;
     }
 }
 

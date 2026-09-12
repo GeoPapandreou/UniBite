@@ -9,6 +9,7 @@ const  bodyParser = require('body-parser');
 const express = require('express');
 
 const app = express();
+const { StartRatingPenaltyChecks } = require('./Helpers/RatingPenaltyHelpers');
 
 // Use cors module
 app.use(cors());
@@ -24,5 +25,8 @@ app.use("/api", require("./Routes/UnibiteRoutes"));
 
 
 const PORT= process.env.PORT || 3001;
+
+// Apply overdue rating penalties automatically while the backend is running.
+StartRatingPenaltyChecks();
 
 app.listen(PORT, () => console.log(`✨ Server running on port ${PORT} ✨`));

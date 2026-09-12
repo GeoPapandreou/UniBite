@@ -175,7 +175,7 @@ const HomePage = () => {
                     cookId: userData.id,
                     title: ListingData.Title,
                     notes: ListingData.Notes,
-                    pickupAvailability: ListingData.PickupAvailability,
+                    pickupDateTime: ListingData.PickupDateTime,
                     photo: photo,
                     portions: ListingData.Portions,
                     pickupLocation: ListingData.PickupLocation,
@@ -186,7 +186,8 @@ const HomePage = () => {
             });
 
             if(!response.ok) {
-                throw new Error("Could not save the listing. Please check that the backend is running.");
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not save the listing. Please check that the backend is running.");
             }
 
             const result = await response.json();
@@ -260,8 +261,7 @@ const HomePage = () => {
                 body: JSON.stringify({
                     listingId: selectedListing.id,
                     consumerId: userData.id,
-                    portion: OrderData.Portions,
-                    pickupDateTime: OrderData.PickupDateTime
+                    portion: OrderData.Portions
                 })
             });
 
@@ -318,7 +318,8 @@ const HomePage = () => {
                 <OrderForm
                     IsOpen={true}
                     ListingTitle={selectedListing.title}
-                    PickupAvailability={selectedListing.pickupAvailability}
+                    PickupDateTime={selectedListing.pickupDateTime}
+                    PickupLocation={selectedListing.pickupLocation}
                     AvailablePortions={selectedListing.portions}
                     IsSaving={isOrdering}
                     OnConfirm={ConfirmOrder}

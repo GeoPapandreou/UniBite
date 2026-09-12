@@ -134,6 +134,13 @@ router
   .delete(requestControllers.DeleteRequestById);
 
 /**
+ * @route PATCH route -> /requests/:id/delivery
+ */
+router
+  .route(Routes.RequestDeliveryRoute)
+  .patch(requestControllers.UpdateRequestDelivery);
+
+/**
  * @route GET and POST route -> /ratings/
  */
 router

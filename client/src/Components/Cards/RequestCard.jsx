@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 
@@ -50,15 +51,42 @@ const RequestCard = ({
     RequesterName,
     Portions = 1,
     PickupDateTime,
+    DateCollected,
     PickupLocation,
     IsApproved = null,
+    IsDelivered = null,
+    RatingValue = null,
     IsListingOwner = false,
     IsSaving = false,
     OnAccept,
     OnDecline,
-    OnCancel
+    OnCancel,
+    OnCollected,
+    OnNoShow,
+    OnRate
 }) => {
-    const status = IsApproved === null ? "Pending" : Number(IsApproved) === 1 ? "Accepted" : "Declined";
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
+    const isAccepted = Number(IsApproved) === 1;
+    const isAwaitingPickup = isAccepted && IsDelivered === null;
+    const hasPickupPassed = new Date(PickupDateTime).getTime() <= currentTime;
+    const collectionTime = new Date(DateCollected).getTime();
+    const isWithinRatingWindow = Boolean(DateCollected) && collectionTime <= currentTime &&
+        currentTime < collectionTime + 48 * 60 * 60 * 1000;
+    const canRate = !IsListingOwner && isAccepted && Number(IsDelivered) === 1 &&
+        RatingValue === null && isWithinRatingWindow;
+
+    // Update pickup actions and hide Rate at its deadline while the page stays open.
+    useEffect(() => {
+        if(!(IsListingOwner && isAwaitingPickup) && !canRate) return;
+
+        const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, [IsListingOwner, isAwaitingPickup, canRate]);
+
+    let status = IsApproved === null ? "Pending" : isAccepted ? "Awaiting pickup" : "Declined";
+    if(isAccepted && IsDelivered !== null) {
+        status = Number(IsDelivered) === 1 ? "Collected" : "No show";
+    }
 
     return(
         <Card style={requestCardStyle}>
@@ -87,8 +115,33 @@ const RequestCard = ({
 
                 <p style={requestInformationStyle}>Status: {status}</p>
 
+                {RatingValue !== null && (
+                    <p style={requestInformationStyle}>Rating: {RatingValue} / 5</p>
+                )}
+
                 <div style={requestButtonsStyle}>
-                    {IsListingOwner ? (
+                    {IsListingOwner && isAccepted ? (
+                        <>
+                            <TextButton
+                                Text="Mark as collected"
+                                OnClick={OnCollected}
+                                Disabled={IsSaving || !OnCollected || !isAwaitingPickup}
+                                BorderRadius="8px"
+                                Color={Constants.White}
+                                BackColor={Constants.Green}
+                                IsRaised={false}
+                            />
+                            <TextButton
+                                Text="No show"
+                                OnClick={OnNoShow}
+                                Disabled={IsSaving || !OnNoShow || !isAwaitingPickup || !hasPickupPassed}
+                                BorderRadius="8px"
+                                Color={Constants.White}
+                                BackColor={Constants.Red}
+                                IsRaised={false}
+                            />
+                        </>
+                    ) : IsListingOwner ? (
                         <>
                             <TextButton
                                 Text="Accept"
@@ -109,6 +162,16 @@ const RequestCard = ({
                                 IsRaised={false}
                             />
                         </>
+                    ) : isAccepted && Number(IsDelivered) === 1 ? (
+                        canRate && <TextButton
+                            Text="Rate"
+                            OnClick={OnRate}
+                            Disabled={IsSaving || !OnRate}
+                            BorderRadius="8px"
+                            Color={Constants.White}
+                            BackColor={Constants.LightBlue}
+                            IsRaised={false}
+                        />
                     ) : (
                         <TextButton
                             Text="Cancel"

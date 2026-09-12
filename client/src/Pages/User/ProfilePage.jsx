@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import Constants from "../../Shared/Constants";
+import Loading from "../../Components/Animations/Loading";
+import ErrorDialog from "../../Components/Dialogs/ErrorDialog";
 
 const profilePageStyle = {
     width: "100%",
@@ -44,13 +47,43 @@ const profileTextStyle = {
 const ProfilePage = () => {
     const location = useLocation();
 
-    const userData = location.state.userData;
+    const userId = location.state?.userData?.id;
+    const [userData, setUserData] = useState(null);
+    const [isLoading, setIsLoading] = useState(!!userId);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    // Load current user data instead of displaying the balance saved at login.
+    useEffect(() => {
+        if(!userId) return;
+
+        let isMounted = true;
+
+        fetch(`/api/Unibite/users/${userId}`)
+            .then(Response => {
+                if(!Response.ok) {
+                    throw new Error("Could not load your profile. Please try opening it again.");
+                }
+
+                return Response.json();
+            })
+            .then(UserData => {
+                if(isMounted) setUserData(UserData);
+            })
+            .catch(error => {
+                if(isMounted) setErrorMessage(error.message);
+            })
+            .finally(() => {
+                if(isMounted) setIsLoading(false);
+            });
+
+        return () => { isMounted = false; };
+    }, [userId]);
 
     return(
         <div className="profilePage" style={profilePageStyle}>
             <h1 style={titleStyle}>Profile</h1>
 
-            {userData ? (
+            {isLoading ? <Loading/> : userData ? (
                 <div className="profileCard" style={profileCardStyle}>
                     <p style={profileTextStyle}>
                         Name: {userData.firstName} {userData.lastName}
@@ -62,6 +95,12 @@ const ProfilePage = () => {
             ) : (
                 <p style={profileTextStyle}>No user data available.</p>
             )}
+
+            <ErrorDialog
+                Text={errorMessage}
+                IsOpen={errorMessage !== ""}
+                IsOpenHandler={() => setErrorMessage("")}
+            />
         </div>
     );
 };

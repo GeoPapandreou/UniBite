@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 
 import Constants from "../../Shared/Constants";
 import Requests from "../../Components/Cards/Requests";
+import RatingForm from "../../Components/Cards/RatingForm";
 import Loading from "../../Components/Animations/Loading";
 import ErrorDialog from "../../Components/Dialogs/ErrorDialog";
 import MessageDialog from "../../Components/Dialogs/MessageDialog";
@@ -32,26 +33,29 @@ const GetRequests = async(CurrentUserId) => {
     const responses = await Promise.all([
         fetch("/api/Unibite/requests"),
         fetch("/api/Unibite/listings"),
-        fetch("/api/Unibite/users")
+        fetch("/api/Unibite/users"),
+        fetch("/api/Unibite/ratings")
     ]);
 
     if(responses.some(Response => !Response.ok)) {
         throw new Error("Could not load the requests. Please refresh the page.");
     }
 
-    const [requests, listings, users] = await Promise.all(
+    const [requests, listings, users, ratings] = await Promise.all(
         responses.map(Response => Response.json())
     );
 
     return requests.map(Request => {
         const listing = listings.find(Listing => Listing.id === Request.listingId);
         const requester = users.find(User => User.id === Request.consumerId);
+        const rating = ratings.find(Rating => Rating.requestId === Request.id);
 
         return {
             ...Request,
             cookId: listing?.cookId,
             listingTitle: listing?.title,
             pickupLocation: listing?.pickupLocation,
+            ratingValue: rating ? Number(rating.rating) : null,
             requesterName: requester ? `${requester.firstName} ${requester.lastName}` : "Unknown user"
         };
     }).filter(Request => Request.consumerId === CurrentUserId || Request.cookId === CurrentUserId);
@@ -66,6 +70,7 @@ const RequestsPage = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [requestToCancel, setRequestToCancel] = useState(null);
+    const [requestToRate, setRequestToRate] = useState(null);
     const decisionInProgress = useRef(false);
 
     useEffect(() => {
@@ -84,6 +89,15 @@ const RequestsPage = () => {
 
         return () => { isMounted = false; };
     }, [userData.id]);
+
+    // Close an open rating form when its 48-hour window ends.
+    useEffect(() => {
+        if(!requestToRate) return;
+
+        const deadline = new Date(requestToRate.dateCollected).getTime() + 48 * 60 * 60 * 1000;
+        const timer = setTimeout(() => setRequestToRate(null), Math.max(0, deadline - Date.now()));
+        return () => clearTimeout(timer);
+    }, [requestToRate]);
 
     /**
      ** Saves the cook's decision and reloads the requests
@@ -131,6 +145,119 @@ const RequestsPage = () => {
 
     const AcceptRequest = (Request) => UpdateRequestApproval(Request, true);
     const DeclineRequest = (Request) => UpdateRequestApproval(Request, false);
+
+    /**
+     ** Saves collection or a no show and refreshes the request cards
+     */
+    const UpdateRequestDelivery = async(Request, IsDelivered) => {
+        if(decisionInProgress.current) return;
+
+        decisionInProgress.current = true;
+        setIsSaving(true);
+        setErrorMessage("");
+
+        try {
+            const response = await fetch(`/api/Unibite/requests/${Request.id}/delivery`, {
+                method: "PATCH",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({cookId: userData.id, isDelivered: IsDelivered})
+            });
+
+            if(!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not save the collection outcome. Please try again.");
+            }
+
+            // Keep the saved outcome even if the following refresh fails.
+            setRequests(RequestsData => RequestsData.map(Item => Item.id === Request.id
+                ? {...Item, isDelivered: IsDelivered ? 1 : 0}
+                : Item
+            ));
+
+            try {
+                setRequests(await GetRequests(userData.id));
+            }
+            catch {
+                setErrorMessage("The outcome was saved, but the requests could not refresh. Please refresh the page.");
+            }
+        }
+        catch(error) {
+            setErrorMessage(error.message);
+        }
+        finally {
+            decisionInProgress.current = false;
+            setIsSaving(false);
+        }
+    };
+
+    const CollectRequest = (Request) => UpdateRequestDelivery(Request, true);
+    const MarkNoShow = (Request) => UpdateRequestDelivery(Request, false);
+
+    const OpenRatingForm = (Request) => {
+        const collectionTime = new Date(Request.dateCollected).getTime();
+        if(!Request.dateCollected || !Number.isFinite(collectionTime) || collectionTime > Date.now() ||
+            Date.now() >= collectionTime + 48 * 60 * 60 * 1000) return;
+
+        if(decisionInProgress.current || Request.consumerId !== userData.id ||
+            Number(Request.isApproved) !== 1 || Number(Request.isDelivered) !== 1 || Request.ratingValue !== null) return;
+
+        setRequestToRate(Request);
+    };
+
+    const CloseRatingForm = () => {
+        if(decisionInProgress.current) return;
+        setRequestToRate(null);
+    };
+
+    /**
+     ** Saves the requester's rating and refreshes the cards without a page reload
+     */
+    const ConfirmRating = async(RatingData) => {
+        if(decisionInProgress.current || !requestToRate) return;
+
+        const requestId = requestToRate.id;
+        decisionInProgress.current = true;
+        setIsSaving(true);
+        setErrorMessage("");
+
+        try {
+            const response = await fetch("/api/Unibite/ratings", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    requestId: requestId,
+                    consumerId: userData.id,
+                    rating: RatingData.Rating
+                })
+            });
+
+            if(!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not save your rating. Please try again.");
+            }
+
+            // Keep the saved rating even if the following refresh fails.
+            setRequests(RequestsData => RequestsData.map(Request => Request.id === requestId
+                ? {...Request, ratingValue: RatingData.Rating}
+                : Request
+            ));
+            setRequestToRate(null);
+
+            try {
+                setRequests(await GetRequests(userData.id));
+            }
+            catch {
+                setErrorMessage("Your rating was saved, but the requests could not refresh. Please open the page again.");
+            }
+        }
+        catch(error) {
+            setErrorMessage(error.message);
+        }
+        finally {
+            decisionInProgress.current = false;
+            setIsSaving(false);
+        }
+    };
 
     const CancelRequest = (Request) => {
         if(decisionInProgress.current) return;
@@ -193,6 +320,7 @@ const RequestsPage = () => {
                         CurrentUserId={userData.id}
                         IsSaving={isSaving}
                         OnCancel={CancelRequest}
+                        OnRate={OpenRatingForm}
                     />
 
                     <h2 style={{...titleStyle, fontSize: "24px"}}>Incoming requests</h2>
@@ -202,8 +330,21 @@ const RequestsPage = () => {
                         IsSaving={isSaving}
                         OnAccept={AcceptRequest}
                         OnDecline={DeclineRequest}
+                        OnCollected={CollectRequest}
+                        OnNoShow={MarkNoShow}
                     />
                 </>
+            )}
+
+            {requestToRate && (
+                <RatingForm
+                    key={requestToRate.id}
+                    IsOpen={true}
+                    ListingTitle={requestToRate.listingTitle}
+                    IsSaving={isSaving}
+                    OnConfirm={ConfirmRating}
+                    OnClose={CloseRatingForm}
+                />
             )}
 
             <MessageDialog

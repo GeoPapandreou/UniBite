@@ -16,9 +16,9 @@ class Listing{
      * @param {number} latitude The pickup latitude
      * @param {number} longitude The pickup longitude
      * @param {boolean} isActive TRUE if the listing is active
-     * @param {string} pickupAvailability The optional pickup availability
+     * @param {string} pickupDateTime The required pickup date and time
      */
-    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive = true, pickupAvailability = null) {
+    constructor(cookId, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive = true, pickupDateTime) {
         this.cookId = cookId;
         this.title = title;
         this.notes = notes;
@@ -28,7 +28,7 @@ class Listing{
         this.latitude = latitude;
         this.longitude = longitude;
         this.isActive = isActive;
-        this.pickupAvailability = pickupAvailability;
+        this.pickupDateTime = pickupDateTime;
     }
 
     /**
@@ -55,14 +55,9 @@ class Listing{
 
         let isActive = this.isActive ? 1 : 0;
 
-        // Pickup availability is nullable in the database
-        let pickupAvailability = this.pickupAvailability === null || this.pickupAvailability === undefined || this.pickupAvailability === ""
-            ? "NULL"
-            : `'${this.pickupAvailability}'`;
-
         let query = `
-            INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive, pickupAvailability)
-            VALUES(${this.cookId}, '${dateCreated}', '${dateUpdated}', '${this.title}', ${notes}, ${photo}, ${this.portions}, '${this.pickupLocation}', ${this.latitude}, ${this.longitude}, ${isActive}, ${pickupAvailability});
+            INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive, pickupDateTime)
+            VALUES(${this.cookId}, '${dateCreated}', '${dateUpdated}', '${this.title}', ${notes}, ${photo}, ${this.portions}, '${this.pickupLocation}', ${this.latitude}, ${this.longitude}, ${isActive}, '${this.pickupDateTime}');
         `;
 
         return query;
@@ -73,7 +68,7 @@ class Listing{
      * @param {string} valuesString The values
      */
     static BulkCreate(valuesString) {
-        let query = `INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive, pickupAvailability) VALUES ${valuesString};`;
+        let query = `INSERT INTO listings(cookId, dateCreated, dateUpdated, title, notes, photo, portions, pickupLocation, latitude, longitude, isActive, pickupDateTime) VALUES ${valuesString};`;
 
         return query;
     }
@@ -108,10 +103,10 @@ class Listing{
      * @param {number} newLatitude The new pickup latitude
      * @param {number} newLongitude The new pickup longitude
      * @param {boolean} newIsActive TRUE if the listing is active
-     * @param {string} newPickupAvailability The new pickup availability
+     * @param {string} newPickupDateTime The new pickup date and time
      * @returns The SQL query
      */
-    static UpdateById(id, newTitle, newNotes, newPhoto, newPortions, newPickupLocation, newLatitude, newLongitude, newIsActive, newPickupAvailability) {
+    static UpdateById(id, newTitle, newNotes, newPhoto, newPortions, newPickupLocation, newLatitude, newLongitude, newIsActive, newPickupDateTime) {
 
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
@@ -129,11 +124,6 @@ class Listing{
 
         let isActive = newIsActive ? 1 : 0;
 
-        // Pickup availability is nullable in the database
-        let pickupAvailability = newPickupAvailability === null || newPickupAvailability === undefined || newPickupAvailability === ""
-            ? "NULL"
-            : `'${newPickupAvailability}'`;
-
         let query = `UPDATE listings SET
             title = "${newTitle}",
             notes = ${notes},
@@ -143,7 +133,7 @@ class Listing{
             latitude = ${newLatitude},
             longitude = ${newLongitude},
             isActive = ${isActive},
-            pickupAvailability = ${pickupAvailability},
+            pickupDateTime = '${newPickupDateTime}',
             dateUpdated = "${dateUpdated}"
             WHERE id = ${id};`;
 

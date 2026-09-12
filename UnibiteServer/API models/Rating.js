@@ -20,14 +20,15 @@ class Rating{
      */
     Create() {
 
-        let dateTimeNow = ControllerHelpers.GetCurrentDateTime();
-
-        let dateCreated = dateTimeNow;
-        let dateUpdated = dateTimeNow;
-
+        // Check the deadline using database time at the moment the rating is saved.
         let query = `
             INSERT INTO ratings(requestId, dateCreated, dateUpdated, rating)
-            VALUES(${this.requestId}, '${dateCreated}', '${dateUpdated}', ${this.rating});
+            SELECT id, NOW(), NOW(), ${this.rating} FROM requests
+            WHERE id = ${this.requestId}
+                AND isApproved = 1
+                AND isDelivered = 1
+                AND dateCollected <= NOW()
+                AND dateCollected > DATE_SUB(NOW(), INTERVAL 48 HOUR);
         `;
 
         return query;

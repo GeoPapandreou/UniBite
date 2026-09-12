@@ -23,7 +23,10 @@ const Requests = ({
     IsSaving = false,
     OnAccept,
     OnDecline,
-    OnCancel
+    OnCancel,
+    OnCollected,
+    OnNoShow,
+    OnRate
 }) => {
     if(RequestsData.length === 0) {
         return(
@@ -40,13 +43,19 @@ const Requests = ({
                     RequesterName={Request.requesterName}
                     Portions={Request.portion}
                     PickupDateTime={Request.pickupDateTime}
+                    DateCollected={Request.dateCollected}
                     PickupLocation={Request.pickupLocation}
                     IsApproved={Request.isApproved}
+                    IsDelivered={Request.isDelivered}
+                    RatingValue={Request.ratingValue}
                     IsListingOwner={CurrentUserId === Request.cookId}
                     IsSaving={IsSaving}
                     OnAccept={OnAccept ? () => OnAccept(Request) : undefined}
                     OnDecline={OnDecline ? () => OnDecline(Request) : undefined}
                     OnCancel={OnCancel ? () => OnCancel(Request) : undefined}
+                    OnCollected={OnCollected ? () => OnCollected(Request) : undefined}
+                    OnNoShow={OnNoShow ? () => OnNoShow(Request) : undefined}
+                    OnRate={OnRate ? () => OnRate(Request) : undefined}
                 />
             ))}
         </div>

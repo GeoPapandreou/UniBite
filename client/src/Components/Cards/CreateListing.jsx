@@ -9,8 +9,11 @@ import { MapContainer, TileLayer, CircleMarker, useMapEvents } from "react-leafl
 import "leaflet/dist/leaflet.css";
 
 import Constants from "../../Shared/Constants";
+import Helpers from "../../Shared/Helpers";
 import TextButton from "../Buttons/TextButton";
 import TextInput from "../Inputs/TextInput";
+import SingleDatePicker from "../DateTimePickers/SingleDatePicker";
+import SingleTimePicker from "../DateTimePickers/SingleTimePicker";
 
 const createListingStyle = {
     width: "400px",
@@ -96,7 +99,8 @@ const CreateListing = ({
 }) => {
     const [title, setTitle] = useState("");
     const [notes, setNotes] = useState("");
-    const [pickupAvailability, setPickupAvailability] = useState("");
+    const [pickupDate, setPickupDate] = useState(null);
+    const [pickupTime, setPickupTime] = useState(null);
     const [portions, setPortions] = useState("");
     const [pickupLocation, setPickupLocation] = useState("");
     const [pickupPosition, setPickupPosition] = useState(null);
@@ -118,7 +122,9 @@ const CreateListing = ({
         notes.trim() !== "" &&
         Number.isSafeInteger(Number(portions)) && Number(portions) > 0 &&
         pickupLocation.trim() !== "" && pickupLocation.trim().length <= 255 &&
-        pickupPosition !== null;
+        pickupPosition !== null &&
+        pickupDate instanceof Date && !Number.isNaN(pickupDate.getTime()) &&
+        pickupTime instanceof Date && !Number.isNaN(pickupTime.getTime());
 
     const ChangePhoto = (event) => {
         const photo = event.target.files[0];
@@ -151,7 +157,8 @@ const CreateListing = ({
 
         setTitle("");
         setNotes("");
-        setPickupAvailability("");
+        setPickupDate(null);
+        setPickupTime(null);
         setPortions("");
         setPickupLocation("");
         setPickupPosition(null);
@@ -169,11 +176,15 @@ const CreateListing = ({
             return;
         }
 
+        // Combine the cook's pickup date and time using the existing date helper.
+        const pickupDateTime = new Date(pickupDate);
+        pickupDateTime.setHours(pickupTime.getHours(), pickupTime.getMinutes(), 0, 0);
+
         // The parent saves the listing and closes the form on success.
         OnConfirm({
             Title: title.trim(),
             Notes: notes.trim(),
-            PickupAvailability: pickupAvailability.trim() || null,
+            PickupDateTime: Helpers.FormatDateTime(pickupDateTime),
             Photo: photo,
             Portions: Number(portions),
             PickupLocation: pickupLocation.trim(),
@@ -280,15 +291,9 @@ const CreateListing = ({
                         />
                     </MapContainer>
 
-                    <TextInput
-                        Text={pickupAvailability}
-                        OnTextChanged={(event) => setPickupAvailability(event.target.value)}
-                        Hint="Pickup availability"
-                        HasFloatingHint={true}
-                        HasFullWidth={true}
-                        Multiline={true}
-                        Rows={2}
-                    />
+                    <p style={labelStyle}>Pickup date and time</p>
+                    <SingleDatePicker OnDateChanged={setPickupDate}/>
+                    <SingleTimePicker OnTimeChanged={setPickupTime}/>
 
                     <div style={listingButtonsStyle}>
                         <TextButton

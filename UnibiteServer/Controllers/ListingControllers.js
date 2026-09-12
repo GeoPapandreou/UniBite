@@ -1,6 +1,7 @@
 const GetQueryResultAsync = require('../Config/db');
 
 const Listing = require('../API models/Listing');
+const ControllerHelpers = require('../Helpers/ControllerHelpers');
 
 // Imports the custom error response
 const ErrorResponse = require("../utils/errorResponse");
@@ -29,7 +30,12 @@ exports.CreateNewListing = async (req, res, next) => {
         return res.status(400).json({ message: "The photo is too large. Please choose a smaller image." });
     }
 
-    let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, req.body.pickupAvailability);
+    let pickupDateTime = new Date(req.body.pickupDateTime);
+    if(typeof req.body.pickupDateTime !== "string" || !Number.isFinite(pickupDateTime.getTime()) || pickupDateTime <= new Date()) {
+        return res.status(400).json({ message: "Please choose a valid pickup date and time in the future." });
+    }
+
+    let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, ControllerHelpers.FormatDateTime(pickupDateTime));
 
     // Gets the SQL query for creating the listing
     let query = listing.Create();
@@ -61,7 +67,12 @@ exports.GetListingById = async (req, res, next) => {
  */
 exports.UpdateListingById = async (req, res, next) => {
 
-    let query = Listing.UpdateById(req.params.id, req.body.title, req.body.notes, req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, req.body.pickupAvailability);
+    let pickupDateTime = new Date(req.body.pickupDateTime);
+    if(typeof req.body.pickupDateTime !== "string" || !Number.isFinite(pickupDateTime.getTime())) {
+        return res.status(400).json({ message: "A valid pickup date and time are required." });
+    }
+
+    let query = Listing.UpdateById(req.params.id, req.body.title, req.body.notes, req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, ControllerHelpers.FormatDateTime(pickupDateTime));
 
     var result = await GetQueryResultAsync(query);
 

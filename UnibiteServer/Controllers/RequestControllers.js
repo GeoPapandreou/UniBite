@@ -1,4 +1,5 @@
 const GetQueryResultAsync = require('../Config/db');
+const { ExecuteTransactionAsync } = require('../Config/db');
 
 const Request = require('../API models/Request');
 const Listing = require('../API models/Listing');
@@ -38,12 +39,6 @@ exports.CreateNewRequest = async (req, res, next) => {
         return res.status(400).json({ message: "Please choose a positive whole number of portions." });
     }
 
-    // Keep the date format sent by the existing frontend date helper.
-    let pickupDateTime = new Date(req.body.pickupDateTime);
-    if(typeof req.body.pickupDateTime !== "string" || !Number.isFinite(pickupDateTime.getTime()) || pickupDateTime <= new Date()) {
-        return res.status(400).json({ message: "Please choose a valid pickup date and time in the future." });
-    }
-
     // Check the current listing before creating a pending request.
     let listings = await GetQueryResultAsync(Listing.GetById(listingId));
     if(listings.length === 0) {
@@ -64,15 +59,31 @@ exports.CreateNewRequest = async (req, res, next) => {
         return res.status(400).json({ message: "There are not enough portions available." });
     }
 
+    // Copy the cook's pickup time from the listing, not from the request body.
+    let pickupDateTime = new Date(listing.pickupDateTime);
+    if(!Number.isFinite(pickupDateTime.getTime()) || pickupDateTime <= new Date()) {
+        return res.status(400).json({ message: "This listing no longer has an upcoming pickup time." });
+    }
+
     let portionRequest = new Request(listingId, consumerId, ControllerHelpers.FormatDateTime(pickupDateTime), portion);
 
-    // Gets the SQL query for creating the portion request
-    let query = portionRequest.Create();
+    // Reserve the credits and create the request together. Failed inserts refund automatically.
+    try {
+        var result = await ExecuteTransactionAsync(async (Query) => {
+            let creditResult = await Query(Request.ReserveCredits(consumerId, portion));
+            if(creditResult.affectedRows === 0) {
+                throw new ErrorResponse("You do not have enough credits for these portions.", 400);
+            }
 
-    // Execute the query
-    var result = await GetQueryResultAsync(query);
+            return await Query(portionRequest.Create());
+        });
 
-    res.status(201).json(result);
+        res.status(201).json(result);
+    }
+    catch(error) {
+        if(error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
 };
 
 /**
@@ -95,19 +106,8 @@ exports.GetRequestById = async (req, res, next) => {
  ** Updates the portion request with the specified id
  */
 exports.UpdateRequestById = async (req, res, next) => {
-
-    let query = Request.UpdateById(req.params.id, req.body.isApproved, req.body.isDelivered, req.body.dateCollected, req.body.portion, req.body.pickupDateTime);
-
-    var result = await GetQueryResultAsync(query);
-
-    if(result.affectedRows === 0) {
-        return next(new ErrorResponse(`ERROR 404: Not found. The request with id ${req.params.id} was not found.`, 404));
-    }
-
-    let query2 = Request.GetById(req.params.id);
-    var result2 = await GetQueryResultAsync(query2);
-
-    res.status(200).json(result2[0]);
+    // Direct edits could change paid portions or reset an already refunded request.
+    res.status(405).json({ message: "Use the approval, collection or cancellation actions. Submitted request details cannot be edited." });
 };
 
 /**
@@ -152,6 +152,47 @@ exports.UpdateRequestApproval = async (req, res, next) => {
 };
 
 /**
+ ** Records collection or a no show for the listing owner
+ */
+exports.UpdateRequestDelivery = async (req, res, next) => {
+    let id = Number(req.params.id);
+    let cookId = Number(req.body?.cookId);
+    let isDelivered = req.body?.isDelivered;
+
+    if(!Number.isSafeInteger(id) || id <= 0 || !Number.isSafeInteger(cookId) || cookId <= 0 || typeof isDelivered !== "boolean") {
+        return res.status(400).json({ message: "A valid request, cook and collection decision are required." });
+    }
+
+    let requests = await GetQueryResultAsync(Request.GetById(id));
+    if(requests.length === 0) {
+        return res.status(404).json({ message: "This request no longer exists." });
+    }
+
+    let listings = await GetQueryResultAsync(Listing.GetById(requests[0].listingId));
+    if(listings.length === 0) {
+        return res.status(404).json({ message: "This listing no longer exists." });
+    }
+
+    if(Number(listings[0].cookId) !== cookId) {
+        return res.status(403).json({ message: "Only the listing owner can record collection or a no show." });
+    }
+
+    if(Number(requests[0].isApproved) !== 1 || requests[0].isDelivered !== null) {
+        return res.status(409).json({ message: "Only accepted requests awaiting pickup can be updated." });
+    }
+
+    // Recheck ownership, status and the pickup time when saving.
+    let query = Request.UpdateDeliveryById(id, cookId, isDelivered);
+    var result = await GetQueryResultAsync(query);
+
+    if(result.affectedRows === 0) {
+        return res.status(409).json({ message: "The request has changed, or the pickup time has not passed yet." });
+    }
+
+    res.status(200).json({ message: isDelivered ? "Request marked as collected." : "No show recorded. All but one reserved credit refunded." });
+};
+
+/**
  ** Cancels a pending request for its requester
  */
 exports.DeleteRequestById = async (req, res, next) => {
@@ -176,14 +217,28 @@ exports.DeleteRequestById = async (req, res, next) => {
         return res.status(409).json({ message: "Only pending requests can be cancelled." });
     }
 
-    // Recheck ownership and pending status when deleting. Portions stay unchanged.
-    let query = Request.CancelById(id, consumerId);
+    // Lock the request so cancellation and cook decisions cannot refund it twice.
+    try {
+        await ExecuteTransactionAsync(async (Query) => {
+            let currentRequests = await Query(Request.GetByIdForUpdate(id));
+            if(currentRequests.length === 0 || Number(currentRequests[0].consumerId) !== consumerId || currentRequests[0].isApproved !== null) {
+                throw new ErrorResponse("The request has changed or was already cancelled. Please refresh the page.", 409);
+            }
 
-    var result = await GetQueryResultAsync(query);
+            let creditResult = await Query(Request.RefundCreditsById(id, consumerId));
+            if(creditResult.affectedRows === 0) {
+                throw new ErrorResponse("The request credits could not be refunded.", 409);
+            }
+            let result = await Query(Request.CancelById(id, consumerId));
+            if(result.affectedRows === 0) {
+                throw new ErrorResponse("The request could not be cancelled.", 409);
+            }
+        });
 
-    if(result.affectedRows === 0) {
-        return res.status(409).json({ message: "The request has changed or was already cancelled. Please refresh the page." });
+        res.status(200).json({ message: "Request cancelled and credits refunded." });
     }
-
-    res.status(200).json({ message: "Request cancelled." });
+    catch(error) {
+        if(error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
 };

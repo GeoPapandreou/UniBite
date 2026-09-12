@@ -9,7 +9,7 @@ class Request{
      ** Default constructor
      * @param {int} listingId The listing id
      * @param {int} consumerId The consumer id
-     * @param {string} pickupDateTime The proposed pickup date and time
+     * @param {string} pickupDateTime The pickup date and time copied from the listing
      * @param {double} portion The requested portion
      */
     constructor(listingId, consumerId, pickupDateTime, portion=1) {
@@ -67,6 +67,73 @@ class Request{
     }
 
     /**
+     ** Locks a request until its credit refund and cancellation finish
+     */
+    static GetByIdForUpdate(id) {
+        return `SELECT * FROM requests WHERE id = ${id} FOR UPDATE;`;
+    }
+
+    /**
+     ** Gets collected requests that missed the 48-hour rating deadline
+     */
+    static GetOverdueRatings() {
+        return `SELECT portionRequest.id FROM requests AS portionRequest
+            LEFT JOIN ratings AS rating ON rating.requestId = portionRequest.id
+                AND rating.dateCreated <= DATE_ADD(portionRequest.dateCollected, INTERVAL 48 HOUR)
+            WHERE portionRequest.isApproved = 1
+                AND portionRequest.isDelivered = 1
+                AND portionRequest.dateCollected <= DATE_SUB(NOW(), INTERVAL 48 HOUR)
+                AND portionRequest.ratingPenaltyApplied = 0
+                AND rating.id IS NULL
+            ORDER BY portionRequest.id;`;
+    }
+
+    /**
+     ** Deducts one credit and records the missing-rating penalty together
+     */
+    static ApplyRatingPenaltyById(id) {
+        return `UPDATE requests AS portionRequest
+            INNER JOIN users AS consumer ON consumer.id = portionRequest.consumerId
+            LEFT JOIN ratings AS rating ON rating.requestId = portionRequest.id
+                AND rating.dateCreated <= DATE_ADD(portionRequest.dateCollected, INTERVAL 48 HOUR)
+            SET consumer.credits = consumer.credits - 1,
+                consumer.dateUpdated = NOW(),
+                portionRequest.ratingPenaltyApplied = 1,
+                portionRequest.dateUpdated = NOW()
+            WHERE portionRequest.id = ${id}
+                AND portionRequest.isApproved = 1
+                AND portionRequest.isDelivered = 1
+                AND portionRequest.dateCollected <= DATE_SUB(NOW(), INTERVAL 48 HOUR)
+                AND portionRequest.ratingPenaltyApplied = 0
+                AND rating.id IS NULL;`;
+    }
+
+    /**
+     ** Reserves one credit per portion, only when the consumer has enough
+     */
+    static ReserveCredits(consumerId, portion) {
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        return `UPDATE users SET credits = credits - ${portion}, dateUpdated = '${dateUpdated}'
+            WHERE id = ${consumerId} AND credits >= ${portion};`;
+    }
+
+    /**
+     ** Refunds a pending request inside the cancellation transaction
+     */
+    static RefundCreditsById(id, consumerId) {
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        return `UPDATE users AS consumer
+            INNER JOIN requests AS portionRequest ON portionRequest.consumerId = consumer.id
+            SET consumer.credits = consumer.credits + portionRequest.portion,
+                consumer.dateUpdated = '${dateUpdated}'
+            WHERE portionRequest.id = ${id}
+                AND consumer.id = ${consumerId}
+                AND portionRequest.isApproved IS NULL;`;
+    }
+
+    /**
      ** Gets all the portion requests for the specified listing
      * @param {int} listingId The listing id
      */
@@ -93,7 +160,7 @@ class Request{
      * @param {boolean} newIsDelivered TRUE if the portion is delivered
      * @param {Date|string} newDateCollected The collection date and time
      * @param {double} newPortion The requested portion
-     * @param {string} newPickupDateTime The proposed pickup date and time, unchanged if omitted
+     * @param {string} newPickupDateTime The pickup date and time, unchanged if omitted
      * @returns The SQL query
      */
     static UpdateById(id, newIsApproved, newIsDelivered, newDateCollected, newPortion, newPickupDateTime) {
@@ -138,11 +205,12 @@ class Request{
     static UpdateApprovalById(id, cookId, isApproved) {
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
-        // Accepting updates the request and remaining portions
+        // Accepting reduces portions. Declining returns the reserved credits.
         let portionUpdate = isApproved
             ? `listing.portions = listing.portions - portionRequest.portion,
                listing.dateUpdated = '${dateUpdated}',`
-            : "";
+            : `consumer.credits = consumer.credits + portionRequest.portion,
+               consumer.dateUpdated = '${dateUpdated}',`;
 
         let availabilityCheck = isApproved
             ? `AND listing.isActive = 1
@@ -153,6 +221,7 @@ class Request{
 
         let query = `UPDATE requests AS portionRequest
             INNER JOIN listings AS listing ON listing.id = portionRequest.listingId
+            INNER JOIN users AS consumer ON consumer.id = portionRequest.consumerId
             SET ${portionUpdate}
                 portionRequest.isApproved = ${isApproved ? 1 : 0},
                 portionRequest.dateUpdated = '${dateUpdated}'
@@ -174,6 +243,41 @@ class Request{
             WHERE id = ${id}
                 AND consumerId = ${consumerId}
                 AND isApproved IS NULL;`;
+
+        return query;
+    }
+
+    /**
+     ** Records collection or a no show for an accepted request
+     * @param {int} id The request id
+     * @param {int} cookId The listing owner id
+     * @param {boolean} isDelivered True = collected, False = no show
+     */
+    static UpdateDeliveryById(id, cookId, isDelivered) {
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        // Collection rewards the cook. A no show refunds all but one reserved credit.
+        let creditUserId = isDelivered ? "listing.cookId" : "portionRequest.consumerId";
+        let creditUpdate = isDelivered
+            ? "creditUser.credits + portionRequest.portion"
+            : "creditUser.credits + portionRequest.portion - 1";
+
+        let pickupCheck = isDelivered ? "" : "AND portionRequest.pickupDateTime <= NOW()";
+
+        // Save the outcome and credit change together, only while collection is pending.
+        let query = `UPDATE requests AS portionRequest
+            INNER JOIN listings AS listing ON listing.id = portionRequest.listingId
+            INNER JOIN users AS creditUser ON creditUser.id = ${creditUserId}
+            SET creditUser.credits = ${creditUpdate},
+                creditUser.dateUpdated = '${dateUpdated}',
+                portionRequest.isDelivered = ${isDelivered ? 1 : 0},
+                portionRequest.dateCollected = ${isDelivered ? `'${dateUpdated}'` : "NULL"},
+                portionRequest.dateUpdated = '${dateUpdated}'
+            WHERE portionRequest.id = ${id}
+                AND listing.cookId = ${cookId}
+                AND portionRequest.isApproved = 1
+                AND portionRequest.isDelivered IS NULL
+                ${pickupCheck};`;
 
         return query;
     }
