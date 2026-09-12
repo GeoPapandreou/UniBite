@@ -37,7 +37,8 @@ const Listings = ({
                     Notes={Listing.notes}
                     Portions={Listing.portions}
                     Allergens={Listing.allergens}
-                    OnOrder={() => OnOrder(Listing)}
+                    Status={Listing.status}
+                    OnOrder={OnOrder ? () => OnOrder(Listing) : undefined}
                 />
             ))}
         </div>

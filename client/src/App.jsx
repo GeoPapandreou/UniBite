@@ -7,6 +7,7 @@ import HomePage from "./Pages/User/HomePage";
 import RequestsPage from "./Pages/User/RequestsPage";
 import StatisticsPage from "./Pages/Admin/StatisticsPage";
 import LeaderboardPage from "./Pages/Admin/LeaderboardPage";
+import AdminListingsPage from "./Pages/Admin/ListingsPage";
 import LayoutPage from "./Pages/LayoutPage";
 
 const App = () => {
@@ -20,6 +21,7 @@ const App = () => {
                     <Route path="admins/:adminId" element={<LayoutPage/>}>
                         <Route path="statistics" element={<StatisticsPage/>}/>
                         <Route path="leaderboard" element={<LeaderboardPage/>}/>
+                        <Route path="listings" element={<AdminListingsPage/>}/>
                     </Route>
 
                     <Route path="users/:userId" element={<LayoutPage/>}>

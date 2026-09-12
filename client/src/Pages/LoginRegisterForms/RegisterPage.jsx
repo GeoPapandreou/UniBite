@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
@@ -6,6 +6,7 @@ import TextField from "@mui/material/TextField";
 import Constants from "../../Shared/Constants";
 import TextButton from "../../Components/Buttons/TextButton";
 import TextInput from "../../Components/Inputs/TextInput";
+import ErrorDialog from "../../Components/Dialogs/ErrorDialog";
 
 const registerPageStyle = {
     width: "100%",
@@ -50,10 +51,7 @@ const registerButtonsStyle = {
     gap: "8px"
 };
 
-const RegisterPage = ({
-    UniversitiesData = [],
-    OnRegister
-}) => {
+const RegisterPage = () => {
     const navigate = useNavigate();
 
     const [universityId, setUniversityId] = useState("");
@@ -62,28 +60,83 @@ const RegisterPage = ({
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [universities, setUniversities] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const registrationInProgress = useRef(false);
+
+    // Load the universities from the database, not a fixed frontend list.
+    useEffect(() => {
+        let isMounted = true;
+
+        fetch("/api/Unibite/universities")
+            .then(Response => {
+                if(!Response.ok) throw new Error("Could not load the universities. Please open registration again.");
+                return Response.json();
+            })
+            .then(UniversitiesData => {
+                if(isMounted) setUniversities(UniversitiesData);
+            })
+            .catch(error => {
+                if(isMounted) setErrorMessage(error.message);
+            })
+            .finally(() => {
+                if(isMounted) setIsLoading(false);
+            });
+
+        return () => { isMounted = false; };
+    }, []);
 
     const isFormValid = universityId !== "" &&
-        firstName !== "" &&
-        lastName !== "" &&
-        email !== "" &&
-        username !== "" &&
-        password !== "";
+        firstName.trim() !== "" &&
+        lastName.trim() !== "" &&
+        email.trim() !== "" &&
+        username.trim() !== "" &&
+        password.trim() !== "";
 
-    const RegisterButton_OnClick = () => {
-        if(OnRegister) {
-            OnRegister({
-                universityId: universityId,
-                firstName: firstName,
-                lastName: lastName,
-                email: email,
-                username: username,
-                password: password
+    /**
+     ** Creates an account and returns to login without reloading the page
+     */
+    const RegisterButton_OnClick = async() => {
+        if(!isFormValid || isLoading || registrationInProgress.current) return;
+
+        registrationInProgress.current = true;
+        setIsSaving(true);
+        setErrorMessage("");
+
+        try {
+            const response = await fetch("/api/Unibite/users", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    universityId: Number(universityId),
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    email: email.trim(),
+                    username: username.trim(),
+                    password: password
+                })
             });
+
+            if(!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not create your account. Please try again.");
+            }
+
+            navigate("/");
+        }
+        catch(error) {
+            setErrorMessage(error.message);
+        }
+        finally {
+            registrationInProgress.current = false;
+            setIsSaving(false);
         }
     };
 
     const CancelButton_OnClick = () => {
+        if(registrationInProgress.current) return;
         navigate("/");
     };
 
@@ -94,12 +147,13 @@ const RegisterPage = ({
 
                 <TextField
                     select
-                    label="University"
+                    label={isLoading ? "Loading universities..." : "University"}
                     value={universityId}
                     onChange={(event) => setUniversityId(event.target.value)}
                     fullWidth
+                    disabled={isLoading || isSaving}
                     style={universityInputStyle}>
-                    {UniversitiesData.map((University) => (
+                    {universities.map((University) => (
                         <MenuItem key={University.id} value={University.id}>
                             {University.name}
                         </MenuItem>
@@ -156,17 +210,23 @@ const RegisterPage = ({
                         Color={Constants.White}
                         BackColor={Constants.Gray}
                         IsRaised={false}
+                        Disabled={isSaving}
                     />
                     <TextButton
-                        Text="Register"
+                        Text={isSaving ? "Registering..." : "Register"}
                         OnClick={RegisterButton_OnClick}
                         BorderRadius="8px"
                         Color={Constants.White}
                         BackColor={Constants.Green}
-                        Disabled={!isFormValid}
+                        Disabled={!isFormValid || isLoading || isSaving}
                     />
                 </div>
             </div>
+            <ErrorDialog
+                Text={errorMessage}
+                IsOpen={errorMessage !== ""}
+                IsOpenHandler={() => setErrorMessage("")}
+            />
         </div>
     );
 };

@@ -37,6 +37,13 @@ const AdminSideMenu = () => {
     };
 
     /**
+     ** Navigates to the listings page of the admin
+     */
+    const GoToListingsPage = () => {
+        navigate("listings", {state: {userData: null, adminData: adminData}});
+    };
+
+    /**
      ** Navigates to the login page
      */
     const GoToLogInPage = () => {
@@ -59,6 +66,11 @@ const AdminSideMenu = () => {
                 Text="Leaderboard"
                 VectorSource={Constants.Trophy}
                 OnClick={GoToLeaderboardPage}
+            />
+            <MenuButton
+                Text="Listings"
+                VectorSource={Constants.Home}
+                OnClick={GoToListingsPage}
             />
 
             <div className="menuExitButton">

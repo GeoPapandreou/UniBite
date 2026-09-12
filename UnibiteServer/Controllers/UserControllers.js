@@ -3,6 +3,7 @@ const GetQueryResultAsync = require('../Config/db');
 const ControllerHelpers = require('../Helpers/ControllerHelpers');
 
 const User = require('../API models/User');
+const University = require('../API models/University');
 
 // Imports the custom error response 
 const ErrorResponse = require("../utils/errorResponse");
@@ -25,15 +26,49 @@ const ErrorResponse = require("../utils/errorResponse");
  ** Creates a new user
  */
  exports.CreateNewUser =  async (req, res, next) => {
-    let user = new User(req.body.username, req.body.email, req.body.password, req.body.firstName, req.body.lastName, req.body.phoneNumber);
-    
-    // Gets the sql query for creating the user
-    let query = user.Create();
-    
-    // Execute the query
-    var result = await GetQueryResultAsync(query);
-    
-    res.status(201).json(result);
+    let universityId = Number(req.body?.universityId);
+    let { firstName, lastName, email, username, password } = req.body || {};
+
+    if(!Number.isSafeInteger(universityId) || universityId <= 0) {
+        return res.status(400).json({ message: "Please select a university." });
+    }
+
+    if([firstName, lastName, email, username, password].some(Value => typeof Value !== "string" || Value.trim() === "")) {
+        return res.status(400).json({ message: "Please complete all the registration fields." });
+    }
+
+    firstName = firstName.trim();
+    lastName = lastName.trim();
+    email = email.trim();
+    username = username.trim();
+
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ message: "Please enter a valid email address." });
+    }
+
+    if(firstName.length > 80 || lastName.length > 80 || email.length > 255 || username.length > 45 || password.length > 45) {
+        return res.status(400).json({ message: "Names can have up to 80 characters, email 255, and username/password 45." });
+    }
+
+    try {
+        let universities = await GetQueryResultAsync(University.GetById(universityId));
+        if(universities.length === 0) {
+            return res.status(400).json({ message: "The selected university no longer exists." });
+        }
+
+        // Match the model's constructor. The database gives new users 5 credits.
+        let user = new User(universityId, firstName, lastName, email, username, password);
+        var result = await GetQueryResultAsync(user.Create());
+
+        res.status(201).json(result);
+    }
+    catch(error) {
+        if(error.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({ message: "This username or email is already in use." });
+        }
+
+        return res.status(500).json({ message: "Could not create your account. Please try again." });
+    }
 };
 
 /**

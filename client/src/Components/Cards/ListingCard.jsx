@@ -81,6 +81,7 @@ const ListingCard = ({
     Notes,
     Portions = 0,
     Allergens = [],
+    Status,
     OnOrder
 }) => {
     const isAvailable = Portions > 0;
@@ -111,6 +112,8 @@ const ListingCard = ({
                 <h2 style={titleStyle}>{Title}</h2>
                 <p style={notesStyle}>{Notes}</p>
 
+                {Status && <p style={notesStyle}>Status: {Status}</p>}
+
                 {Allergens.length > 0 && (
                     <div style={allergensStyle}>
                         {Allergens.map((Allergen) => (
@@ -123,7 +126,7 @@ const ListingCard = ({
                     </div>
                 )}
 
-                <div style={orderButtonStyle}>
+                {OnOrder && <div style={orderButtonStyle}>
                     <TextButton
                         Text="Order"
                         OnClick={OnOrder}
@@ -133,7 +136,7 @@ const ListingCard = ({
                         IsRaised={false}
                         Disabled={!isAvailable}
                     />
-                </div>
+                </div>}
             </CardContent>
         </Card>
     );
