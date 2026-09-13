@@ -93,6 +93,13 @@ class Listing{
     }
 
     /**
+     ** Locks the listing while editing it or creating a request
+     */
+    static GetByIdForUpdate(id) {
+        return `SELECT * FROM listings WHERE id = ${id} FOR UPDATE;`;
+    }
+
+    /**
      ** Updates the listing
      * @param {int} id The id
      * @param {string} newTitle The new title

@@ -22,8 +22,8 @@ const theme = createTheme({
     },
 });
 
-export default function SingleTimePicker({OnTimeChanged}) {
-    const [time, setTime] = useState(null);
+export default function SingleTimePicker({OnTimeChanged, InitialTime = null, Disabled = false}) {
+    const [time, setTime] = useState(InitialTime);
 
     return (
         <ThemeProvider theme={theme}>
@@ -31,6 +31,7 @@ export default function SingleTimePicker({OnTimeChanged}) {
                 <TimePicker
                     label="Time"
                     value={time}
+                    disabled={Disabled}
                     onChange={(newValue) => {
                         setTime(newValue);
                         OnTimeChanged(newValue);

@@ -82,7 +82,9 @@ const ListingCard = ({
     Portions = 0,
     Allergens = [],
     Status,
-    OnOrder
+    OnOrder,
+    OnEdit,
+    IsSaving = false
 }) => {
     const isAvailable = Portions > 0;
 
@@ -135,6 +137,18 @@ const ListingCard = ({
                         BackColor={Constants.Gray}
                         IsRaised={false}
                         Disabled={!isAvailable}
+                    />
+                </div>}
+
+                {OnEdit && <div style={orderButtonStyle}>
+                    <TextButton
+                        Text="Edit"
+                        OnClick={OnEdit}
+                        BorderRadius="8px"
+                        Color={Constants.White}
+                        BackColor={Constants.LightBlue}
+                        IsRaised={false}
+                        Disabled={IsSaving}
                     />
                 </div>}
             </CardContent>

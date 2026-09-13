@@ -1,6 +1,21 @@
 class Helpers {
 
     /**
+     * Converts a chosen listing photo to the data URL stored in the database
+     */
+    static async ReadListingPhoto(photo) {
+        if(!photo) return null;
+
+        const prefix = `data:${photo.type};base64,`;
+        if(prefix.length + 4 * Math.ceil(photo.size / 3) > 65535) {
+            throw new Error("The photo is too large. Please choose an image smaller than 48 KB.");
+        }
+
+        const bytes = new Uint8Array(await photo.arrayBuffer());
+        return prefix + btoa(Array.from(bytes, Byte => String.fromCharCode(Byte)).join(""));
+    }
+
+    /**
      * Gets the current date time and formats it as a string
      * @returns The date as a string
      */

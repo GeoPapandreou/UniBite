@@ -63,9 +63,10 @@ const listingButtonsStyle = {
 };
 
 // The marker listens for clicks inside the map.
-const PickupMarker = ({Position, OnPositionChanged}) => {
+const PickupMarker = ({Position, OnPositionChanged, Disabled = false}) => {
     useMapEvents({
         click(event) {
+            if(Disabled) return;
             const position = event.latlng.wrap();
 
             OnPositionChanged({
@@ -94,33 +95,37 @@ const CreateListing = ({
     IsOpen,
     AllergensData = [],
     IsSaving = false,
+    InitialListing = null,
+    PickupDetailsLocked = false,
     OnConfirm,
     OnClose
 }) => {
-    const [title, setTitle] = useState("");
-    const [notes, setNotes] = useState("");
-    const [pickupDate, setPickupDate] = useState(null);
-    const [pickupTime, setPickupTime] = useState(null);
-    const [portions, setPortions] = useState("");
-    const [pickupLocation, setPickupLocation] = useState("");
-    const [pickupPosition, setPickupPosition] = useState(null);
-    const [selectedAllergens, setSelectedAllergens] = useState([]);
-    const [photoPreview, setPhotoPreview] = useState("");
+    const isEditing = InitialListing !== null;
+    const [title, setTitle] = useState(InitialListing?.title ?? "");
+    const [notes, setNotes] = useState(InitialListing?.notes ?? "");
+    const [pickupDate, setPickupDate] = useState(() => isEditing ? new Date(InitialListing.pickupDateTime) : null);
+    const [pickupTime, setPickupTime] = useState(() => isEditing ? new Date(InitialListing.pickupDateTime) : null);
+    const [portions, setPortions] = useState(isEditing ? String(InitialListing.portions) : "");
+    const [pickupLocation, setPickupLocation] = useState(InitialListing?.pickupLocation ?? "");
+    const [pickupPosition, setPickupPosition] = useState(() => isEditing
+        ? {Latitude: Number(InitialListing.latitude), Longitude: Number(InitialListing.longitude)} : null);
+    const [selectedAllergens, setSelectedAllergens] = useState(() => InitialListing?.allergens?.map(Allergen => Allergen.id) ?? []);
+    const [photoPreview, setPhotoPreview] = useState(InitialListing?.photo ?? "");
     const [photo, setPhoto] = useState(null);
     const photoInput = useRef(null);
 
     // Release the previous preview when it changes or the form closes.
     useEffect(() => {
         return () => {
-            if(photoPreview) {
+            if(photoPreview.startsWith("blob:")) {
                 URL.revokeObjectURL(photoPreview);
             }
         };
     }, [photoPreview]);
 
     const isFormValid = title.trim() !== "" && title.trim().length <= 120 &&
-        notes.trim() !== "" &&
-        Number.isSafeInteger(Number(portions)) && Number(portions) > 0 &&
+        (isEditing || notes.trim() !== "") && portions !== "" &&
+        Number.isSafeInteger(Number(portions)) && Number(portions) >= (isEditing ? 0 : 1) &&
         pickupLocation.trim() !== "" && pickupLocation.trim().length <= 255 &&
         pickupPosition !== null &&
         pickupDate instanceof Date && !Number.isNaN(pickupDate.getTime()) &&
@@ -178,7 +183,7 @@ const CreateListing = ({
 
         // Combine the cook's pickup date and time using the existing date helper.
         const pickupDateTime = new Date(pickupDate);
-        pickupDateTime.setHours(pickupTime.getHours(), pickupTime.getMinutes(), 0, 0);
+        pickupDateTime.setHours(pickupTime.getHours(), pickupTime.getMinutes(), isEditing ? pickupTime.getSeconds() : 0, 0);
 
         // The parent saves the listing and closes the form on success.
         OnConfirm({
@@ -199,7 +204,7 @@ const CreateListing = ({
         <Dialog open={IsOpen} onClose={CloseCreateListing} aria-labelledby="createListingTitle">
             <DialogContent>
                 <div className="createListing" style={createListingStyle}>
-                    <h2 id="createListingTitle" style={titleStyle}>Create listing</h2>
+                    <h2 id="createListingTitle" style={titleStyle}>{isEditing ? "Edit listing" : "Create listing"}</h2>
 
                     <TextInput
                         Text={title}
@@ -271,6 +276,7 @@ const CreateListing = ({
 
                     <TextInput
                         Text={pickupLocation}
+                        Disabled={PickupDetailsLocked}
                         OnTextChanged={(event) => setPickupLocation(event.target.value)}
                         Hint="Pickup location"
                         HasFloatingHint={true}
@@ -278,8 +284,8 @@ const CreateListing = ({
                     />
 
                     <MapContainer
-                        center={[38.7, 23.5]}
-                        zoom={6}
+                        center={isEditing ? [Number(InitialListing.latitude), Number(InitialListing.longitude)] : [38.7, 23.5]}
+                        zoom={isEditing ? 14 : 6}
                         scrollWheelZoom={false}
                         style={mapStyle}>
                         <TileLayer
@@ -288,12 +294,17 @@ const CreateListing = ({
                         <PickupMarker
                             Position={pickupPosition}
                             OnPositionChanged={setPickupPosition}
+                            Disabled={PickupDetailsLocked}
                         />
                     </MapContainer>
 
                     <p style={labelStyle}>Pickup date and time</p>
-                    <SingleDatePicker OnDateChanged={setPickupDate}/>
-                    <SingleTimePicker OnTimeChanged={setPickupTime}/>
+                    <SingleDatePicker InitialDate={pickupDate} OnDateChanged={setPickupDate} Disabled={PickupDetailsLocked}/>
+                    <SingleTimePicker InitialTime={pickupTime} OnTimeChanged={setPickupTime} Disabled={PickupDetailsLocked}/>
+
+                    {PickupDetailsLocked && (
+                        <p style={labelStyle}>Pickup details cannot change while requests are pending or awaiting collection.</p>
+                    )}
 
                     <div style={listingButtonsStyle}>
                         <TextButton
@@ -306,7 +317,7 @@ const CreateListing = ({
                             Disabled={IsSaving}
                         />
                         <TextButton
-                            Text={IsSaving ? "Saving..." : "Create"}
+                            Text={IsSaving ? "Saving..." : isEditing ? "Save" : "Create"}
                             OnClick={ConfirmListing}
                             BorderRadius="8px"
                             Color={Constants.White}

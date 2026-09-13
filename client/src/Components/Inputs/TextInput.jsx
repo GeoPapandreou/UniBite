@@ -30,6 +30,7 @@ const textInputStyle = {
 const TextInput = ({ 
         Text,
         Type = "text",
+        Disabled = false,
         OnTextChanged, 
         Hint = "hint", 
         HasFullWidth = false,
@@ -46,6 +47,7 @@ const TextInput = ({
                         variant="outlined" 
                         value={Text}
                         type={Type}
+                        disabled={Disabled}
                         multiline={Multiline}
                         rows={Rows}
                         onChange={OnTextChanged}

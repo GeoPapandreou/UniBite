@@ -74,6 +74,23 @@ class Rating{
     }
 
     /**
+     ** Gives the cook one bonus credit inside the new rating's transaction
+     * @param {int} requestId The collected request id
+     */
+    static AwardCookBonusByRequestId(requestId) {
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        let query = `UPDATE users AS cook
+            INNER JOIN listings AS listing ON listing.cookId = cook.id
+            INNER JOIN requests AS portionRequest ON portionRequest.listingId = listing.id
+            SET cook.credits = cook.credits + 1,
+                cook.dateUpdated = '${dateUpdated}'
+            WHERE portionRequest.id = ${requestId};`;
+
+        return query;
+    }
+
+    /**
      ** Updates the rating
      * @param {int} id The id
      * @param {double} newRating The new rating value

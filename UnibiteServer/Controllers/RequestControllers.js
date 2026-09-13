@@ -70,6 +70,19 @@ exports.CreateNewRequest = async (req, res, next) => {
     // Reserve the credits and create the request together. Failed inserts refund automatically.
     try {
         var result = await ExecuteTransactionAsync(async (Query) => {
+            // Serialize request creation with listing edits; never reserve outdated pickup details.
+            let currentListings = await Query(Listing.GetByIdForUpdate(listingId));
+            let currentListing = currentListings[0];
+            if(!currentListing || !currentListing.isActive ||
+                Date.now() - new Date(currentListing.dateCreated).getTime() >= 48 * 60 * 60 * 1000 ||
+                new Date(currentListing.pickupDateTime) <= new Date() ||
+                Number(currentListing.portions) !== Number(listing.portions) ||
+                new Date(currentListing.dateUpdated).getTime() !== new Date(listing.dateUpdated).getTime() ||
+                new Date(currentListing.pickupDateTime).getTime() !== pickupDateTime.getTime() ||
+                currentListing.pickupLocation !== listing.pickupLocation) {
+                throw new ErrorResponse("This listing has changed. Please reopen it before requesting portions.", 409);
+            }
+
             let creditResult = await Query(Request.ReserveCredits(consumerId, portion));
             if(creditResult.affectedRows === 0) {
                 throw new ErrorResponse("You do not have enough credits for these portions.", 400);

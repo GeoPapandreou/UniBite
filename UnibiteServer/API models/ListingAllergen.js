@@ -65,6 +65,13 @@ class ListingAllergen{
     }
 
     /**
+     ** Clears the previous allergens inside the listing edit transaction
+     */
+    static DeleteByListingId(listingId) {
+        return `DELETE FROM listingallergens WHERE listingId = ${listingId};`;
+    }
+
+    /**
      ** Updates the listing and allergen relationship
      * @param {int} id The id
      * @param {int} newListingId The new listing id

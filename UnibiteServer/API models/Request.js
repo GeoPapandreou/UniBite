@@ -144,6 +144,14 @@ class Request{
     }
 
     /**
+     ** Gets requests whose pickup arrangements must still be kept
+     */
+    static GetOutstandingByListingId(listingId) {
+        return `SELECT id FROM requests WHERE listingId = ${listingId}
+            AND (isApproved IS NULL OR (isApproved = 1 AND isDelivered IS NULL)) FOR UPDATE;`;
+    }
+
+    /**
      ** Gets all the portion requests for the specified consumer
      * @param {int} consumerId The consumer id
      */

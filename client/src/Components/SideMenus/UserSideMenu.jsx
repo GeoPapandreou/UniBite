@@ -30,6 +30,13 @@ const UserSideMenu = () => {
     };
 
     /**
+     ** Navigates to the listings created by the user
+     */
+    const GoToMyListingsPage = () => {
+        navigate("my-listings", {state: {userData: userData}});
+    };
+
+    /**
      ** Navigates to the requests page of the user
      */
     const GoToRequestsPage = () => {
@@ -61,6 +68,11 @@ const UserSideMenu = () => {
                 Text="Listings"
                 VectorSource={Constants.Home}
                 OnClick={GoToHomePage}
+            />
+            <MenuButton
+                Text="My Listings"
+                VectorSource={Constants.Clipboard}
+                OnClick={GoToMyListingsPage}
             />
             <MenuButton
                 Text="Requests"

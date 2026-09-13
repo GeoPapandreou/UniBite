@@ -65,6 +65,14 @@ exports.CreateNewRating = async (req, res, next) => {
                 throw new ErrorResponse("The 48-hour rating window has ended.", 409);
             }
 
+            // Save the rating and its one-credit bonus together, never separately.
+            if(ratingValue > 3) {
+                let bonusResult = await Query(Rating.AwardCookBonusByRequestId(requestId));
+                if(bonusResult.affectedRows === 0) {
+                    throw new ErrorResponse("Could not save the cook's rating bonus. Please try again.", 500);
+                }
+            }
+
             return ratingResult;
         });
 

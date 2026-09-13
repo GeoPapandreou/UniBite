@@ -19,7 +19,9 @@ const emptyMessageStyle = {
 
 const Listings = ({
     ListingsData = [],
-    OnOrder
+    OnOrder,
+    OnEdit,
+    IsSaving = false
 }) => {
     if(ListingsData.length === 0) {
         return(
@@ -39,6 +41,8 @@ const Listings = ({
                     Allergens={Listing.allergens}
                     Status={Listing.status}
                     OnOrder={OnOrder ? () => OnOrder(Listing) : undefined}
+                    OnEdit={OnEdit ? () => OnEdit(Listing) : undefined}
+                    IsSaving={IsSaving}
                 />
             ))}
         </div>

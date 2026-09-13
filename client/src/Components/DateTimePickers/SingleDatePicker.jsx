@@ -21,8 +21,8 @@ const theme = createTheme({
     },
 });
 
-export default function SingleDatePicker({OnDateChanged}) {
-    const [date, setDate] = useState(null);
+export default function SingleDatePicker({OnDateChanged, InitialDate = null, Disabled = false}) {
+    const [date, setDate] = useState(InitialDate);
 
     return (
         <ThemeProvider theme={theme}>
@@ -30,6 +30,7 @@ export default function SingleDatePicker({OnDateChanged}) {
                 <DatePicker
                     label="Date"
                     value={date}
+                    disabled={Disabled}
                     onChange={(newValue) => {
                         setDate(newValue);
                         OnDateChanged(newValue);

@@ -4,6 +4,7 @@ import ProfilePage from "./Pages/User/ProfilePage";
 import LoginPage from "./Pages/LoginRegisterForms/LoginPage";
 import RegisterPage from "./Pages/LoginRegisterForms/RegisterPage";
 import HomePage from "./Pages/User/HomePage";
+import MyListingsPage from "./Pages/User/MyListingsPage";
 import RequestsPage from "./Pages/User/RequestsPage";
 import StatisticsPage from "./Pages/Admin/StatisticsPage";
 import LeaderboardPage from "./Pages/Admin/LeaderboardPage";
@@ -26,6 +27,7 @@ const App = () => {
 
                     <Route path="users/:userId" element={<LayoutPage/>}>
                         <Route path="home" element={<HomePage/>}/>
+                        <Route path="my-listings" element={<MyListingsPage/>}/>
                         <Route path="requests" element={<RequestsPage/>}/>
                         <Route path="profile" element={<ProfilePage/>}/>
                     </Route>
