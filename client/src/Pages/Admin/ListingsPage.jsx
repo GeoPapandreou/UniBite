@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import Constants from "../../Shared/Constants";
 import Listings from "../../Components/Cards/Listings";
 import Loading from "../../Components/Animations/Loading";
 import ErrorDialog from "../../Components/Dialogs/ErrorDialog";
+import MessageDialog from "../../Components/Dialogs/MessageDialog";
 
 const listingsPageStyle = {
     width: "100%",
@@ -57,9 +59,15 @@ const GetListings = async() => {
 };
 
 const ListingsPage = () => {
+    const location = useLocation();
+    const adminData = location.state.adminData;
+
     const [listings, setListings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
+    const [deletingListing, setDeletingListing] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const actionInProgress = useRef(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -78,13 +86,68 @@ const ListingsPage = () => {
         return () => { isMounted = false; };
     }, []);
 
+    const OpenDeleteListing = (Listing) => {
+        if(actionInProgress.current) return;
+        setErrorMessage("");
+        setDeletingListing(Listing);
+    };
+
+    const CloseDeleteListing = () => {
+        if(actionInProgress.current) return;
+        setDeletingListing(null);
+    };
+
+    /**
+     ** Deletes the confirmed listing and removes its card without reloading the page
+     */
+    const ConfirmDeleteListing = async() => {
+        if(actionInProgress.current || !deletingListing) return;
+        actionInProgress.current = true;
+        setIsSaving(true);
+        setErrorMessage("");
+
+        try {
+            const response = await fetch(`/api/Unibite/listings/${deletingListing.id}`, {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({adminId: adminData.id})
+            });
+
+            if(!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not delete the listing. Please try again.");
+            }
+
+            setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));
+            setDeletingListing(null);
+        }
+        catch(error) {
+            setDeletingListing(null);
+            setErrorMessage(error.message);
+        }
+        finally {
+            actionInProgress.current = false;
+            setIsSaving(false);
+        }
+    };
+
     return(
         <div className="adminListingsPage" style={listingsPageStyle}>
             <h1 style={titleStyle}>All Listings</h1>
 
             {isLoading ? <Loading/> : errorMessage === "" && (
-                <Listings ListingsData={listings}/>
+                <Listings ListingsData={listings} OnDelete={OpenDeleteListing} IsSaving={isSaving}/>
             )}
+
+            <MessageDialog
+                Text="Are you sure?"
+                Color={Constants.Red}
+                IsOpen={deletingListing !== null}
+                IsOpenHandler={CloseDeleteListing}
+                YesOnClick={ConfirmDeleteListing}
+                NoOnClick={CloseDeleteListing}
+                IsSaving={isSaving}
+            />
 
             <ErrorDialog
                 Text={errorMessage}

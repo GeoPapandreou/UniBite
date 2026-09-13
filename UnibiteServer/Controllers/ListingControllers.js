@@ -2,6 +2,7 @@ const GetQueryResultAsync = require('../Config/db');
 const { ExecuteTransactionAsync } = require('../Config/db');
 
 const Listing = require('../API models/Listing');
+const Admin = require('../API models/Admin');
 const ListingAllergen = require('../API models/ListingAllergen');
 const Allergen = require('../API models/Allergen');
 const Request = require('../API models/Request');
@@ -168,9 +169,12 @@ exports.UpdateListingById = async (req, res, next) => {
 exports.DeleteListingById = async (req, res, next) => {
     let id = Number(req.params.id);
     let cookId = Number(req.body?.cookId);
+    let adminId = Number(req.body?.adminId);
+    let isAdminRequest = req.body?.adminId !== undefined;
+    let actorId = isAdminRequest ? adminId : cookId;
 
-    if(!Number.isSafeInteger(id) || id <= 0 || !Number.isSafeInteger(cookId) || cookId <= 0) {
-        return res.status(400).json({ message: "A valid listing and cook are required." });
+    if(!Number.isSafeInteger(id) || id <= 0 || !Number.isSafeInteger(actorId) || actorId <= 0) {
+        return res.status(400).json({ message: "A valid listing and cook or admin are required." });
     }
 
     try {
@@ -178,7 +182,12 @@ exports.DeleteListingById = async (req, res, next) => {
             let listings = await Query(Listing.GetByIdForUpdate(id));
             if(listings.length === 0) throw new ErrorResponse("This listing no longer exists.", 404);
 
-            if(Number(listings[0].cookId) !== cookId) {
+            // Admins may remove any listing; cooks may only remove their own.
+            if(isAdminRequest) {
+                let admins = await Query(Admin.GetById(adminId));
+                if(admins.length === 0) throw new ErrorResponse("This admin account was not found.", 403);
+            }
+            else if(Number(listings[0].cookId) !== cookId) {
                 throw new ErrorResponse("You can only delete your own listings.", 403);
             }
 
