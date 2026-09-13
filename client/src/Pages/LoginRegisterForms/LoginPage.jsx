@@ -58,6 +58,7 @@ const LoginPage = () => {
      */
     const LoginButton_OnClick = async() => {
         try {
+            // fetch GET loads accounts; this implementation compares credentials in the frontend below.
             const usersResponse = await fetch("/api/Unibite/users");
             const adminsResponse = await fetch("/api/Unibite/admins");
 

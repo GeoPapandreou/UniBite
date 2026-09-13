@@ -32,6 +32,7 @@ const CreateListingButton = ({
         setErrorMessage("");
 
         try {
+            // fetch GET supplies the allergen choices from the database, not a hardcoded list.
             const response = await fetch("/api/Unibite/allergens");
 
             if(!response.ok) {
@@ -75,6 +76,7 @@ const CreateListingButton = ({
         try {
             const photo = await Helpers.ReadListingPhoto(ListingData.Photo);
 
+            // fetch POST sends the form as JSON, including the optional photo converted to a data URL.
             const response = await fetch("/api/Unibite/listings", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -101,6 +103,7 @@ const CreateListingButton = ({
             listingId = result.insertId;
 
             for(const AllergenId of ListingData.AllergenIds) {
+                // Link each selected allergen to the new listing using its returned insertId.
                 const allergenResponse = await fetch("/api/Unibite/listingAllergens", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},

@@ -70,6 +70,7 @@ const RegisterPage = () => {
     useEffect(() => {
         let isMounted = true;
 
+        // fetch GET fills the university selector with the database's universities.
         fetch("/api/Unibite/universities")
             .then(Response => {
                 if(!Response.ok) throw new Error("Could not load the universities. Please open registration again.");
@@ -106,6 +107,7 @@ const RegisterPage = () => {
         setErrorMessage("");
 
         try {
+            // fetch POST sends registration as JSON; the database gives the new user 5 starting credits.
             const response = await fetch("/api/Unibite/users", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},

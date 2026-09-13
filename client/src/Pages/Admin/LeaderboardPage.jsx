@@ -70,6 +70,7 @@ const LeaderboardPage = () => {
          */
         const GetLeaderboard = async() => {
             try {
+                // fetch GET loads the related records used to calculate the leaderboard.
                 const usersResponse = await fetch("/api/Unibite/users");
                 const listingsResponse = await fetch("/api/Unibite/listings");
                 const requestsResponse = await fetch("/api/Unibite/requests");
@@ -85,6 +86,7 @@ const LeaderboardPage = () => {
                 const requests = await requestsResponse.json();
                 const ratings = await ratingsResponse.json();
 
+                // Rank cooks by portions actually collected, not by their current credit balance.
                 const donorPortions = {};
 
                 requests
@@ -134,6 +136,7 @@ const LeaderboardPage = () => {
                     }
                 });
 
+                // Average each listing's ratings, sort highest first and display the top five.
                 const meals = Object.values(mealRatings)
                     .map((Meal) => ({
                         title: Meal.title,

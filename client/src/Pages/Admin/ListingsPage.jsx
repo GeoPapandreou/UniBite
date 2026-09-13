@@ -29,6 +29,7 @@ const titleStyle = {
  ** Gets all stored listings for the admin, including expired listings
  */
 const GetListings = async() => {
+    // fetch GET loads all listings for admin review; expired listings are not filtered out here.
     const responses = await Promise.all([
         fetch("/api/Unibite/listings"),
         fetch("/api/Unibite/listingAllergens"),
@@ -107,6 +108,7 @@ const ListingsPage = () => {
         setErrorMessage("");
 
         try {
+            // fetch DELETE uses the same refund/deletion flow as My Listings, with an admin ID.
             const response = await fetch(`/api/Unibite/listings/${deletingListing.id}`, {
                 method: "DELETE",
                 headers: {"Content-Type": "application/json"},
@@ -118,6 +120,7 @@ const ListingsPage = () => {
                 throw new Error(errorData.message || "Could not delete the listing. Please try again.");
             }
 
+            // Update the displayed cards without reloading the page after a successful deletion.
             setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));
             setDeletingListing(null);
         }

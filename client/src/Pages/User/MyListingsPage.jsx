@@ -41,6 +41,7 @@ const GetListingPhoto = (Listing) => Listing.photo?.type === "Buffer"
  ** Gets the user's own listings, including sold-out and expired listings
  */
 const GetMyListings = async(CurrentUserId) => {
+    // fetch GET loads the owner's cards, including listings hidden from the public feed by expiry.
     const responses = await Promise.all([
         fetch("/api/Unibite/listings"),
         fetch("/api/Unibite/listingAllergens"),
@@ -115,6 +116,7 @@ const MyListingsPage = () => {
         setErrorMessage("");
 
         try {
+            // Reload current details before editing; requests determine whether pickup fields are locked.
             const responses = await Promise.all([
                 fetch(`/api/Unibite/listings/${Listing.id}`),
                 fetch("/api/Unibite/allergens"),
@@ -166,6 +168,7 @@ const MyListingsPage = () => {
         try {
             // Omit photo when unchanged so the backend preserves the stored image.
             const photo = ListingData.Photo ? await Helpers.ReadListingPhoto(ListingData.Photo) : undefined;
+            // fetch PUT saves the edited details and selected allergen IDs together in the backend.
             const response = await fetch(`/api/Unibite/listings/${editingListing.id}`, {
                 method: "PUT",
                 headers: {"Content-Type": "application/json"},
@@ -236,6 +239,7 @@ const MyListingsPage = () => {
         setErrorMessage("");
 
         try {
+            // fetch DELETE removes the listing; the backend refunds outstanding requests before deletion.
             const response = await fetch(`/api/Unibite/listings/${deletingListing.id}`, {
                 method: "DELETE",
                 headers: {"Content-Type": "application/json"},
@@ -247,6 +251,7 @@ const MyListingsPage = () => {
                 throw new Error(errorData.message || "Could not delete the listing. Please try again.");
             }
 
+            // Remove the card through React state only after the API confirms deletion.
             setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));
             setDeletingListing(null);
         }

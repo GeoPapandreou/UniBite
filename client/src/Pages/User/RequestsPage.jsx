@@ -30,6 +30,7 @@ const titleStyle = {
  ** Gets sent and incoming requests with the listing title and requester name
  */
 const GetRequests = async(CurrentUserId) => {
+    // fetch GET loads requests and the related data needed for names, listings and ratings.
     const responses = await Promise.all([
         fetch("/api/Unibite/requests"),
         fetch("/api/Unibite/listings"),
@@ -103,6 +104,7 @@ const RequestsPage = () => {
      ** Saves the cook's decision and reloads the requests
      */
     const UpdateRequestApproval = async(Request, IsApproved) => {
+        // Block another click immediately while the current decision is being saved.
         if(decisionInProgress.current) return;
 
         decisionInProgress.current = true;
@@ -110,6 +112,7 @@ const RequestsPage = () => {
         setErrorMessage("");
 
         try {
+            // fetch PATCH sends accept/decline as JSON; the backend updates portions or refunds credits.
             const response = await fetch(`/api/Unibite/requests/${Request.id}`, {
                 method: "PATCH",
                 headers: {"Content-Type": "application/json"},
@@ -121,7 +124,7 @@ const RequestsPage = () => {
                 throw new Error(errorData.message || "Could not save the decision. Please try again.");
             }
 
-            // Keep the saved status even if the following refresh fails.
+            // React state updates the card without a page reload, even if the next GET fails.
             setRequests(RequestsData => RequestsData.map(Item => Item.id === Request.id
                 ? {...Item, isApproved: IsApproved ? 1 : 0}
                 : Item
@@ -157,6 +160,7 @@ const RequestsPage = () => {
         setErrorMessage("");
 
         try {
+            // fetch PATCH records collection or no-show; credit changes are calculated by the backend.
             const response = await fetch(`/api/Unibite/requests/${Request.id}/delivery`, {
                 method: "PATCH",
                 headers: {"Content-Type": "application/json"},
@@ -221,6 +225,7 @@ const RequestsPage = () => {
         setErrorMessage("");
 
         try {
+            // fetch POST sends the selected stars; a rating of 4 or 5 gives the cook a bonus credit.
             const response = await fetch("/api/Unibite/ratings", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -279,6 +284,7 @@ const RequestsPage = () => {
         CloseCancelDialog();
 
         try {
+            // fetch DELETE cancels a pending request and asks the backend to refund its reserved credits.
             const response = await fetch(`/api/Unibite/requests/${requestId}`, {
                 method: "DELETE",
                 headers: {"Content-Type": "application/json"},

@@ -56,10 +56,12 @@ const ExecuteTransactionAsync = async (ExecuteQueries) => {
         };
 
         const result = await ExecuteQueries(Query);
+        // Commit makes all related changes permanent, such as a request and its credit deduction.
         await connection.commit();
         return result;
     }
     catch(error) {
+        // Rollback undoes every change in this transaction if any query fails.
         await connection.rollback();
         throw error;
     }

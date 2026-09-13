@@ -92,6 +92,7 @@ class Request{
      ** Deducts one credit and records the missing-rating penalty together
      */
     static ApplyRatingPenaltyById(id) {
+        // After 48 hours without a rating, subtract one extra credit; the flag prevents repeat deductions.
         return `UPDATE requests AS portionRequest
             INNER JOIN users AS consumer ON consumer.id = portionRequest.consumerId
             LEFT JOIN ratings AS rating ON rating.requestId = portionRequest.id
@@ -114,6 +115,7 @@ class Request{
     static ReserveCredits(consumerId, portion) {
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
+        // The WHERE condition leaves the balance unchanged if there are not enough credits.
         return `UPDATE users SET credits = credits - ${portion}, dateUpdated = '${dateUpdated}'
             WHERE id = ${consumerId} AND credits >= ${portion};`;
     }
@@ -151,7 +153,7 @@ class Request{
     }
 
     /**
-     ** Returns reserved credits when the cook deletes an uncollected listing
+     ** Returns reserved credits when a cook or admin deletes a listing
      */
     static RefundUncollectedCreditsById(id) {
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
@@ -235,7 +237,8 @@ class Request{
     static UpdateApprovalById(id, cookId, isApproved) {
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
-        // Accepting reduces portions. Declining returns the reserved credits.
+        // Accept: subtract N available portions, with no second credit deduction.
+        // Decline: refund all N reserved credits; available portions were never reduced.
         let portionUpdate = isApproved
             ? `listing.portions = listing.portions - portionRequest.portion,
                listing.dateUpdated = '${dateUpdated}',`
@@ -286,7 +289,8 @@ class Request{
     static UpdateDeliveryById(id, cookId, isDelivered) {
         let dateUpdated = ControllerHelpers.GetCurrentDateTime();
 
-        // Collection rewards the cook. A no show refunds all but one reserved credit.
+        // Collected: give the cook N credits; the consumer already paid when requesting.
+        // No show: refund N - 1 to the consumer, leaving a total loss of exactly one credit.
         let creditUserId = isDelivered ? "listing.cookId" : "portionRequest.consumerId";
         let creditUpdate = isDelivered
             ? "creditUser.credits + portionRequest.portion"

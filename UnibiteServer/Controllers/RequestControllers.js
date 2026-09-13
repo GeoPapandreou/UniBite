@@ -67,7 +67,7 @@ exports.CreateNewRequest = async (req, res, next) => {
 
     let portionRequest = new Request(listingId, consumerId, ControllerHelpers.FormatDateTime(pickupDateTime), portion);
 
-    // Reserve the credits and create the request together. Failed inserts refund automatically.
+    // Save the credit deduction and request together; a failed insert rolls back the deduction.
     try {
         var result = await ExecuteTransactionAsync(async (Query) => {
             // Serialize request creation with listing edits; never reserve outdated pickup details.
@@ -83,11 +83,13 @@ exports.CreateNewRequest = async (req, res, next) => {
                 throw new ErrorResponse("This listing has changed. Please reopen it before requesting portions.", 409);
             }
 
+            // Deduct N credits for N portions now, while approval is still pending.
             let creditResult = await Query(Request.ReserveCredits(consumerId, portion));
             if(creditResult.affectedRows === 0) {
                 throw new ErrorResponse("You do not have enough credits for these portions.", 400);
             }
 
+            // Listing portions are not reduced here; they are reduced only when the cook accepts.
             return await Query(portionRequest.Create());
         });
 
@@ -238,6 +240,7 @@ exports.DeleteRequestById = async (req, res, next) => {
                 throw new ErrorResponse("The request has changed or was already cancelled. Please refresh the page.", 409);
             }
 
+            // Cancelling a pending order returns all N credits before deleting the request.
             let creditResult = await Query(Request.RefundCreditsById(id, consumerId));
             if(creditResult.affectedRows === 0) {
                 throw new ErrorResponse("The request credits could not be refunded.", 409);

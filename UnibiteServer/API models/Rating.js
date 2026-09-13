@@ -20,7 +20,8 @@ class Rating{
      */
     Create() {
 
-        // Check the deadline using database time at the moment the rating is saved.
+        // The 48-hour rating window starts at actual collection, not the scheduled pickup time.
+        // Check it using database time at the moment the rating is saved.
         let query = `
             INSERT INTO ratings(requestId, dateCreated, dateUpdated, rating)
             SELECT id, NOW(), NOW(), ${this.rating} FROM requests

@@ -44,6 +44,7 @@ const ApplyRatingPenalties = async () => {
 const StartRatingPenaltyChecks = () => {
     if(checkTimer) return;
 
+    // The startup check also catches missed deadlines from when the backend was not running.
     ApplyRatingPenalties();
     checkTimer = setInterval(ApplyRatingPenalties, 60 * 1000);
     checkTimer.unref();

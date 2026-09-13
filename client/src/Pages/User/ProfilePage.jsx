@@ -58,6 +58,7 @@ const ProfilePage = () => {
 
         let isMounted = true;
 
+        // fetch GET reads the latest credits instead of displaying the balance saved at login.
         fetch(`/api/Unibite/users/${userId}`)
             .then(Response => {
                 if(!Response.ok) {

@@ -117,7 +117,7 @@ exports.UpdateListingById = async (req, res, next) => {
                 throw new ErrorResponse("You can only edit your own listings.", 403);
             }
 
-            // Do not overwrite portions that were reduced by an accepted request.
+            // Reject a stale edit so it cannot overwrite portions reduced by an accepted request.
             if(Number(listing.portions) !== originalPortions || new Date(listing.dateUpdated).getTime() !== new Date(originalDateUpdated).getTime()) {
                 throw new ErrorResponse("This listing has changed. Please reopen My Listings before editing it again.", 409);
             }
@@ -195,6 +195,7 @@ exports.DeleteListingById = async (req, res, next) => {
             let requests = await Query(Request.GetByListingIdForUpdate(id));
             for(const request of requests) {
                 if(request.isApproved === null || (Number(request.isApproved) === 1 && request.isDelivered === null)) {
+                    // Refund only pending/accepted-uncollected orders; completed credit changes stay as they are.
                     let refund = await Query(Request.RefundUncollectedCreditsById(request.id));
                     if(refund.affectedRows === 0) {
                         throw new ErrorResponse("The reserved credits could not be refunded. The listing was not deleted.", 409);

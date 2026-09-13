@@ -37,6 +37,7 @@ const messageStyle = {
  ** Gets the listings and their allergens for the user's university
  */
 const GetListings = async(UniversityId) => {
+    // fetch GET loads the related API data; Promise.all waits for all four responses.
     const responses = await Promise.all([
         fetch("/api/Unibite/listings"),
         fetch("/api/Unibite/listingAllergens"),
@@ -48,10 +49,12 @@ const GetListings = async(UniversityId) => {
         throw new Error("Could not load the listings. Please refresh the page.");
     }
 
+    // Convert the JSON response bodies into JavaScript arrays used by the cards.
     const [listings, listingAllergens, allergens, users] = await Promise.all(
         responses.map(Response => Response.json())
     );
 
+    // Show only active listings under 48 hours old from this university; database rows are kept.
     return listings.filter(Listing => Listing.isActive &&
         Date.now() - new Date(Listing.dateCreated).getTime() < 48 * 60 * 60 * 1000 && users.some(User =>
         User.id === Listing.cookId && User.universityId === UniversityId
@@ -138,6 +141,7 @@ const HomePage = () => {
         setErrorMessage("");
 
         try {
+            // fetch POST sends the order as JSON. The backend deducts credits; portions change on approval.
             const response = await fetch("/api/Unibite/requests", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},

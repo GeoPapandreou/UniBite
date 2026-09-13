@@ -58,6 +58,7 @@ const StatisticsPage = () => {
          */
         const GetStatistics = async() => {
             try {
+                // fetch GET loads requests; the calculation below sums collected portions, not order count.
                 const response = await fetch("/api/Unibite/requests");
 
                 if(!response.ok) {

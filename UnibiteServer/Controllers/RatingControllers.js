@@ -65,7 +65,8 @@ exports.CreateNewRating = async (req, res, next) => {
                 throw new ErrorResponse("The 48-hour rating window has ended.", 409);
             }
 
-            // Save the rating and its one-credit bonus together, never separately.
+            // A rating of 4 or 5 awards one bonus credit, regardless of the number of portions.
+            // Save the rating and bonus in the same transaction so both succeed or both roll back.
             if(ratingValue > 3) {
                 let bonusResult = await Query(Rating.AwardCookBonusByRequestId(requestId));
                 if(bonusResult.affectedRows === 0) {
