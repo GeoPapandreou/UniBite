@@ -23,23 +23,10 @@ const headerTitleStyle = {
     fontWeight: 600
 };
 
-const headerUsernameStyle = {
-    color: `#${Constants.White}`,
-    fontFamily: Constants.FontFamily,
-    fontSize: "18px",
-    fontWeight: 600
-};
-
-const HeaderBar = ({Username}) => {
+const HeaderBar = () => {
     return(
         <div className="headerBar" style={headerBarStyle}>
             <div style={headerTitleStyle}>UniBite</div>
-
-            {Username ? (
-                <div style={headerUsernameStyle}>{Username}</div>
-            ) : (
-                <div></div>
-            )}
         </div>
     );
 };
