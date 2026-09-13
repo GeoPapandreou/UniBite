@@ -75,7 +75,8 @@ const MessageDialog = ({
     IsOpen,
     IsOpenHandler,
     YesOnClick,
-    NoOnClick
+    NoOnClick,
+    IsSaving = false
 }) => {
     const dialogCircleStyle = {
         backgroundColor: `#${BackColor}`
@@ -103,6 +104,7 @@ const MessageDialog = ({
                     <div style={dialogButtonsStyle}>
                         <TextButton
                             OnClick={NoOnClick}
+                            Disabled={IsSaving}
                             IsRaised={false}
                             Text="No"
                             Color={Constants.Red}
@@ -110,6 +112,7 @@ const MessageDialog = ({
                         />
                         <TextButton
                             OnClick={YesOnClick}
+                            Disabled={IsSaving}
                             IsRaised={false}
                             Text="Yes"
                             Color={Constants.Green}

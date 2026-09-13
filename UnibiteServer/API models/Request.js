@@ -144,6 +144,28 @@ class Request{
     }
 
     /**
+     ** Locks the listing's requests before refunding and deleting them
+     */
+    static GetByListingIdForUpdate(listingId) {
+        return `SELECT * FROM requests WHERE listingId = ${listingId} ORDER BY id FOR UPDATE;`;
+    }
+
+    /**
+     ** Returns reserved credits when the cook deletes an uncollected listing
+     */
+    static RefundUncollectedCreditsById(id) {
+        let dateUpdated = ControllerHelpers.GetCurrentDateTime();
+
+        return `UPDATE users AS consumer
+            INNER JOIN requests AS portionRequest ON portionRequest.consumerId = consumer.id
+            SET consumer.credits = consumer.credits + portionRequest.portion,
+                consumer.dateUpdated = '${dateUpdated}'
+            WHERE portionRequest.id = ${id}
+                AND (portionRequest.isApproved IS NULL
+                    OR (portionRequest.isApproved = 1 AND portionRequest.isDelivered IS NULL));`;
+    }
+
+    /**
      ** Gets requests whose pickup arrangements must still be kept
      */
     static GetOutstandingByListingId(listingId) {

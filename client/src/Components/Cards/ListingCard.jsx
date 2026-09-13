@@ -84,6 +84,7 @@ const ListingCard = ({
     Status,
     OnOrder,
     OnEdit,
+    OnDelete,
     IsSaving = false
 }) => {
     const isAvailable = Portions > 0;
@@ -140,8 +141,8 @@ const ListingCard = ({
                     />
                 </div>}
 
-                {OnEdit && <div style={orderButtonStyle}>
-                    <TextButton
+                {(OnEdit || OnDelete) && <div style={{...orderButtonStyle, gap: "8px"}}>
+                    {OnEdit && <TextButton
                         Text="Edit"
                         OnClick={OnEdit}
                         BorderRadius="8px"
@@ -149,7 +150,16 @@ const ListingCard = ({
                         BackColor={Constants.LightBlue}
                         IsRaised={false}
                         Disabled={IsSaving}
-                    />
+                    />}
+                    {OnDelete && <TextButton
+                        Text="Delete"
+                        OnClick={OnDelete}
+                        BorderRadius="8px"
+                        Color={Constants.White}
+                        BackColor={Constants.Red}
+                        IsRaised={false}
+                        Disabled={IsSaving}
+                    />}
                 </div>}
             </CardContent>
         </Card>

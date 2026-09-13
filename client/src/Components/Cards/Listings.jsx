@@ -21,6 +21,7 @@ const Listings = ({
     ListingsData = [],
     OnOrder,
     OnEdit,
+    OnDelete,
     IsSaving = false
 }) => {
     if(ListingsData.length === 0) {
@@ -42,6 +43,7 @@ const Listings = ({
                     Status={Listing.status}
                     OnOrder={OnOrder ? () => OnOrder(Listing) : undefined}
                     OnEdit={OnEdit ? () => OnEdit(Listing) : undefined}
+                    OnDelete={OnDelete ? () => OnDelete(Listing) : undefined}
                     IsSaving={IsSaving}
                 />
             ))}

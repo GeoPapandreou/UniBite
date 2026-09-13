@@ -8,6 +8,7 @@ import CreateListing from "../../Components/Cards/CreateListing";
 import Listings from "../../Components/Cards/Listings";
 import Loading from "../../Components/Animations/Loading";
 import ErrorDialog from "../../Components/Dialogs/ErrorDialog";
+import MessageDialog from "../../Components/Dialogs/MessageDialog";
 
 const myListingsPageStyle = {
     width: "100%",
@@ -73,10 +74,11 @@ const MyListingsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [editingListing, setEditingListing] = useState(null);
+    const [deletingListing, setDeletingListing] = useState(null);
     const [allergens, setAllergens] = useState([]);
     const [pickupDetailsLocked, setPickupDetailsLocked] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const editInProgress = useRef(false);
+    const actionInProgress = useRef(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -107,8 +109,8 @@ const MyListingsPage = () => {
      ** Opens the existing form with the latest listing and selected allergens
      */
     const OpenEditListing = async(Listing) => {
-        if(editInProgress.current) return;
-        editInProgress.current = true;
+        if(actionInProgress.current || deletingListing) return;
+        actionInProgress.current = true;
         setIsSaving(true);
         setErrorMessage("");
 
@@ -142,13 +144,13 @@ const MyListingsPage = () => {
             setErrorMessage(error.message);
         }
         finally {
-            editInProgress.current = false;
+            actionInProgress.current = false;
             setIsSaving(false);
         }
     };
 
     const CloseEditListing = () => {
-        if(editInProgress.current) return;
+        if(actionInProgress.current) return;
         setEditingListing(null);
     };
 
@@ -156,8 +158,8 @@ const MyListingsPage = () => {
      ** Saves the listing and its allergens, then updates the cards without a reload
      */
     const ConfirmEditListing = async(ListingData) => {
-        if(editInProgress.current || !editingListing) return;
-        editInProgress.current = true;
+        if(actionInProgress.current || !editingListing) return;
+        actionInProgress.current = true;
         setIsSaving(true);
         setErrorMessage("");
 
@@ -208,7 +210,52 @@ const MyListingsPage = () => {
             setErrorMessage(error.message);
         }
         finally {
-            editInProgress.current = false;
+            actionInProgress.current = false;
+            setIsSaving(false);
+        }
+    };
+
+    const OpenDeleteListing = (Listing) => {
+        if(actionInProgress.current || editingListing) return;
+        setErrorMessage("");
+        setDeletingListing(Listing);
+    };
+
+    const CloseDeleteListing = () => {
+        if(actionInProgress.current) return;
+        setDeletingListing(null);
+    };
+
+    /**
+     ** Deletes the confirmed listing and removes its card without reloading the page
+     */
+    const ConfirmDeleteListing = async() => {
+        if(actionInProgress.current || !deletingListing) return;
+        actionInProgress.current = true;
+        setIsSaving(true);
+        setErrorMessage("");
+
+        try {
+            const response = await fetch(`/api/Unibite/listings/${deletingListing.id}`, {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({cookId: userData.id})
+            });
+
+            if(!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Could not delete the listing. Please try again.");
+            }
+
+            setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));
+            setDeletingListing(null);
+        }
+        catch(error) {
+            setDeletingListing(null);
+            setErrorMessage(error.message);
+        }
+        finally {
+            actionInProgress.current = false;
             setIsSaving(false);
         }
     };
@@ -220,11 +267,11 @@ const MyListingsPage = () => {
             <CreateListingButton
                 CookId={userData.id}
                 OnCreated={RefreshListings}
-                Disabled={isLoading || isSaving || editingListing !== null}
+                Disabled={isLoading || isSaving || editingListing !== null || deletingListing !== null}
             />
 
             {isLoading ? <Loading/> : errorMessage === "" && (
-                <Listings ListingsData={listings} OnEdit={OpenEditListing} IsSaving={isSaving}/>
+                <Listings ListingsData={listings} OnEdit={OpenEditListing} OnDelete={OpenDeleteListing} IsSaving={isSaving}/>
             )}
 
             {editingListing && (
@@ -239,6 +286,16 @@ const MyListingsPage = () => {
                     OnClose={CloseEditListing}
                 />
             )}
+
+            <MessageDialog
+                Text={`Are you sure?`}
+                Color={Constants.Red}
+                IsOpen={deletingListing !== null}
+                IsOpenHandler={CloseDeleteListing}
+                YesOnClick={ConfirmDeleteListing}
+                NoOnClick={CloseDeleteListing}
+                IsSaving={isSaving}
+            />
 
             <ErrorDialog
                 Text={errorMessage}

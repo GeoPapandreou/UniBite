@@ -166,14 +166,42 @@ exports.UpdateListingById = async (req, res, next) => {
  ** Deletes the listing with the specified id
  */
 exports.DeleteListingById = async (req, res, next) => {
+    let id = Number(req.params.id);
+    let cookId = Number(req.body?.cookId);
 
-    let query = Listing.DeleteById(req.params.id);
-
-    var result = await GetQueryResultAsync(query);
-
-    if(result.affectedRows === 0) {
-        return next(new ErrorResponse(`ERROR 404: Not found. The listing with id ${req.params.id} was not found.`, 404));
+    if(!Number.isSafeInteger(id) || id <= 0 || !Number.isSafeInteger(cookId) || cookId <= 0) {
+        return res.status(400).json({ message: "A valid listing and cook are required." });
     }
 
-    res.status(200).json({ message: `The listing with id ${req.params.id} was deleted successfully.` });
+    try {
+        await ExecuteTransactionAsync(async (Query) => {
+            let listings = await Query(Listing.GetByIdForUpdate(id));
+            if(listings.length === 0) throw new ErrorResponse("This listing no longer exists.", 404);
+
+            if(Number(listings[0].cookId) !== cookId) {
+                throw new ErrorResponse("You can only delete your own listings.", 403);
+            }
+
+            // Lock requests so cancellation or collection cannot change their credits mid-delete.
+            let requests = await Query(Request.GetByListingIdForUpdate(id));
+            for(const request of requests) {
+                if(request.isApproved === null || (Number(request.isApproved) === 1 && request.isDelivered === null)) {
+                    let refund = await Query(Request.RefundUncollectedCreditsById(request.id));
+                    if(refund.affectedRows === 0) {
+                        throw new ErrorResponse("The reserved credits could not be refunded. The listing was not deleted.", 409);
+                    }
+                }
+            }
+
+            // Existing foreign keys also delete the requests, ratings and allergen links.
+            let result = await Query(Listing.DeleteById(id));
+            if(result.affectedRows === 0) throw new ErrorResponse("This listing no longer exists.", 404);
+        });
+
+        res.status(200).json({ message: "Listing deleted and reserved credits refunded." });
+    }
+    catch(error) {
+        if(error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return res.status(500).json({ message: "Could not delete the listing. No changes were saved. Please try again." });
+    }
 };
