@@ -95,7 +95,6 @@ const CreateListingButton = ({
             // Connects the next inserts to the listing just created.
             listingId = result.insertId;
 
-            // These are separate requests, not one transaction; a later failure cannot undo the listing.
             for(const AllergenId of ListingData.AllergenIds) {
                 // Link each selected allergen to the new listing using its returned insertId.
                 const allergenResponse = await fetch("/api/Unibite/listingAllergens", {

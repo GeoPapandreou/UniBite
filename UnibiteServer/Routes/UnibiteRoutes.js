@@ -14,7 +14,7 @@ const router = express.Router();
 const Routes = require('./routes');
 
 /**
- * @route GET and POST route -> /users/
+ * @route GET and POST route -> /Unibite/users
  */
 router
   .route(Routes.UsersRoute)
@@ -22,7 +22,7 @@ router
   .post(userControllers.CreateNewUser);
 
 /**
- * @route GET, PUT and DELETE route -> /users/:id
+ * @route GET, PUT and DELETE route -> /Unibite/users/:id
  */
 router
   .route(Routes.UserRoute)
@@ -31,7 +31,7 @@ router
   .delete(userControllers.DeleteUserById);
 
 /**
- * @route GET and POST route -> /admins/
+ * @route GET and POST route -> /Unibite/admins
  */
 router
   .route(Routes.AdminsRoute)
@@ -39,7 +39,7 @@ router
   .post(adminControllers.CreateNewAdmin);
 
 /**
- * @route GET, PUT and DELETE route -> /admins/:id
+ * @route GET, PUT and DELETE route -> /Unibite/admins/:id
  */
 router
   .route(Routes.AdminRoute)
@@ -48,7 +48,7 @@ router
   .delete(adminControllers.DeleteAdminById);
 
 /**
- * @route GET and POST route -> /universities/
+ * @route GET and POST route -> /Unibite/universities
  */
 router
   .route(Routes.UniversitiesRoute)
@@ -56,7 +56,7 @@ router
   .post(universityControllers.CreateNewUniversity);
 
 /**
- * @route GET, PUT and DELETE route -> /universities/:id
+ * @route GET, PUT and DELETE route -> /Unibite/universities/:id
  */
 router
   .route(Routes.UniversityRoute)
@@ -65,7 +65,7 @@ router
   .delete(universityControllers.DeleteUniversityById);
 
 /**
- * @route GET and POST route -> /allergens/
+ * @route GET and POST route -> /Unibite/allergens
  */
 router
   .route(Routes.AllergensRoute)
@@ -73,7 +73,7 @@ router
   .post(allergenControllers.CreateNewAllergen);
 
 /**
- * @route GET, PUT and DELETE route -> /allergens/:id
+ * @route GET, PUT and DELETE route -> /Unibite/allergens/:id
  */
 router
   .route(Routes.AllergenRoute)
@@ -82,7 +82,7 @@ router
   .delete(allergenControllers.DeleteAllergenById);
 
 /**
- * @route GET and POST route -> /listings/
+ * @route GET and POST route -> /Unibite/listings
  */
 router
   .route(Routes.ListingsRoute)
@@ -91,7 +91,7 @@ router
   .post(listingControllers.CreateNewListing);
 
 /**
- * @route GET, PUT and DELETE route -> /listings/:id
+ * @route GET, PUT and DELETE route -> /Unibite/listings/:id
  */
 router
   .route(Routes.ListingRoute)
@@ -101,7 +101,7 @@ router
   .delete(listingControllers.DeleteListingById);
 
 /**
- * @route GET and POST route -> /listingAllergens/
+ * @route GET and POST route -> /Unibite/listingAllergens
  */
 router
   .route(Routes.ListingAllergensRoute)
@@ -109,7 +109,7 @@ router
   .post(listingAllergenControllers.CreateNewListingAllergen);
 
 /**
- * @route GET, PUT and DELETE route -> /listingAllergens/:id
+ * @route GET, PUT and DELETE route -> /Unibite/listingAllergens/:id
  */
 router
   .route(Routes.ListingAllergenRoute)
@@ -118,7 +118,7 @@ router
   .delete(listingAllergenControllers.DeleteListingAllergenById);
 
 /**
- * @route GET and POST route -> /requests/
+ * @route GET and POST route -> /Unibite/requests
  */
 router
   .route(Routes.RequestsRoute)
@@ -126,7 +126,7 @@ router
   .post(requestControllers.CreateNewRequest);
 
 /**
- * @route GET, PUT, PATCH and DELETE route -> /requests/:id
+ * @route GET, PUT, PATCH and DELETE route -> /Unibite/requests/:id
  */
 router
   .route(Routes.RequestRoute)
@@ -136,14 +136,14 @@ router
   .delete(requestControllers.DeleteRequestById);
 
 /**
- * @route PATCH route -> /requests/:id/delivery
+ * @route PATCH route -> /Unibite/requests/:id/delivery
  */
 router
   .route(Routes.RequestDeliveryRoute)
   .patch(requestControllers.UpdateRequestDelivery);
 
 /**
- * @route GET and POST route -> /ratings/
+ * @route GET and POST route -> /Unibite/ratings
  */
 router
   .route(Routes.RatingsRoute)
@@ -151,7 +151,7 @@ router
   .post(ratingControllers.CreateNewRating);
 
 /**
- * @route GET, PUT and DELETE route -> /ratings/:id
+ * @route GET, PUT and DELETE route -> /Unibite/ratings/:id
  */
 router
   .route(Routes.RatingRoute)
