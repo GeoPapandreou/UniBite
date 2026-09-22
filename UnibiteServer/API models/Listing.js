@@ -36,6 +36,7 @@ class Listing{
      */
     Create() {
 
+        // ListingControllers passes the returned string to Config/db.js to execute it.
         let dateTimeNow = ControllerHelpers.GetCurrentDateTime();
 
         let dateCreated = dateTimeNow;

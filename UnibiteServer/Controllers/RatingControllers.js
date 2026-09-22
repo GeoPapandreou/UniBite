@@ -26,6 +26,7 @@ exports.GetAllRatings = async (req, res, next) => {
  */
 exports.CreateNewRating = async (req, res, next) => {
 
+    // Entry from RequestsPage's POST /ratings;
     let requestId = Number(req.body?.requestId);
     let consumerId = Number(req.body?.consumerId);
     let ratingValue = req.body?.rating;
@@ -77,6 +78,7 @@ exports.CreateNewRating = async (req, res, next) => {
             return ratingResult;
         });
 
+        // Respond only after the rating and any cook bonus have committed successfully.
         res.status(201).json(result);
     }
     catch(error) {

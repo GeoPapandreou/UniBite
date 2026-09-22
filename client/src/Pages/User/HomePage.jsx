@@ -38,7 +38,7 @@ const messageStyle = {
  */
 const GetListings = async(UniversityId) => {
     // fetch GET loads the related data; Promise.all waits for all four responses.
-    // Convert the JSON response bodies into JavaScript arrays.
+    // Convert the JSON response bodies into JavaScript arrays. 
     const [listings, listingAllergens, allergens, users] = await Promise.all([
         fetch("/api/Unibite/listings").then(Response => Response.json()),
         fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
@@ -47,6 +47,7 @@ const GetListings = async(UniversityId) => {
     ]);
 
     // Show only active listings under 48 hours old from this university; database rows are kept.
+    // filter keeps matching rows; map copies each row and attaches the photo/allergen display values.
     return listings.filter(Listing => Listing.isActive &&
         Date.now() - new Date(Listing.dateCreated).getTime() < 48 * 60 * 60 * 1000 && users.some(User =>
         User.id === Listing.cookId && User.universityId === UniversityId
@@ -66,12 +67,14 @@ const HomePage = () => {
     const location = useLocation();
     const userData = location.state.userData;
     const [listings, setListings] = useState([]);
+    // null means no order form is selected; selecting a listing makes that form appear below.
     const [selectedListing, setSelectedListing] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [isOrdering, setIsOrdering] = useState(false);
     const [orderMessage, setOrderMessage] = useState("");
 
+    // Gets the listing cards.
     useEffect(() => {
         GetListings(userData.universityId)
             .then(ListingsData => setListings(ListingsData))
@@ -96,6 +99,7 @@ const HomePage = () => {
         setErrorMessage("");
     };
 
+    
     const OpenOrderForm = (Listing) => {
         setOrderMessage("");
         setErrorMessage("");
@@ -116,6 +120,7 @@ const HomePage = () => {
      ** Saves a pending request without reducing the listing's portions
      */
     const ConfirmOrder = async(OrderData) => {
+        // OrderForm passes Portions through OnConfirm. A missing selection has no listing ID to send.
         if(isOrdering || !selectedListing) return;
 
         setIsOrdering(true);

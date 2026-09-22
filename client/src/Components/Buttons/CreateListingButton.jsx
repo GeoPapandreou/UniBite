@@ -32,7 +32,7 @@ const CreateListingButton = ({
         setErrorMessage("");
 
         try {
-            // fetch GET supplies the allergen choices from the database, not a hardcoded list.
+            // fetch GET supplies the allergen choices from the database.
             const allergensData = await fetch("/api/Unibite/allergens").then(Response => Response.json());
 
             setAllergens(allergensData);
@@ -61,14 +61,17 @@ const CreateListingButton = ({
 
         setIsSaving(true);
         setErrorMessage("");
+
         let listingId = null;
 
         try {
+            // Converts an optional File to JSON-friendly image text;
             const photo = await Helpers.ReadListingPhoto(ListingData.Photo);
 
             // fetch POST sends the form as JSON, including the optional photo converted to a data URL.
             const response = await fetch("/api/Unibite/listings", {
                 method: "POST",
+                // stringify turns the JavaScript object into JSON text.
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     cookId: CookId,
@@ -84,11 +87,15 @@ const CreateListingButton = ({
                 })
             });
 
+            // fetch gives an HTTP Response;
             const result = await response.json();
+            // This check sends an unsuccessful response to catch.
             if(!response.ok) throw new Error(result.message || "Could not save the listing. Please check that the backend is running.");
 
+            // Connects the next inserts to the listing just created.
             listingId = result.insertId;
 
+            // These are separate requests, not one transaction; a later failure cannot undo the listing.
             for(const AllergenId of ListingData.AllergenIds) {
                 // Link each selected allergen to the new listing using its returned insertId.
                 const allergenResponse = await fetch("/api/Unibite/listingAllergens", {
@@ -115,17 +122,20 @@ const CreateListingButton = ({
         setIsCreateListingOpen(false);
 
         try {
+            // HomePage/MyListingsPage supplied RefreshListings as OnCreated. It fetches the new cards.
             await OnCreated();
         }
         catch {
             setErrorMessage(Message => Message || "The listing was saved, but the list could not refresh. Please refresh the page.");
         }
         finally {
+            // Always release the saving state, even if refreshing the cards failed.
             actionInProgress.current = false;
             setIsSaving(false);
         }
     };
 
+    // The first button opens the form; the form's OnConfirm calls ConfirmCreateListing above.
     return(
         <>
             <TextButton

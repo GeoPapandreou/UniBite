@@ -69,6 +69,7 @@ const PickupMarker = ({Position, OnPositionChanged, Disabled = false}) => {
             if(Disabled) return;
             const position = event.latlng.wrap();
 
+            // OnPositionChanged is the parent's setPickupPosition; the click stores coordinates in state.
             OnPositionChanged({
                 Latitude: position.lat,
                 Longitude: position.lng
@@ -100,6 +101,8 @@ const CreateListing = ({
     OnConfirm,
     OnClose
 }) => {
+    // The same form creates when InitialListing is null and edits when a listing object is supplied.
+    // ?. safely reads an optional object; ?? supplies a default only for null or undefined values.
     const isEditing = InitialListing !== null;
     const [title, setTitle] = useState(InitialListing?.title ?? "");
     const [notes, setNotes] = useState(InitialListing?.notes ?? "");
@@ -177,6 +180,7 @@ const CreateListing = ({
     };
 
     const ConfirmListing = () => {
+        // return stops the click handler before it can pass invalid values to the saving function.
         if(!isFormValid || IsSaving) {
             return;
         }
@@ -185,7 +189,7 @@ const CreateListing = ({
         const pickupDateTime = new Date(pickupDate);
         pickupDateTime.setHours(pickupTime.getHours(), pickupTime.getMinutes(), isEditing ? pickupTime.getSeconds() : 0, 0);
 
-        // The parent saves the listing and closes the form on success.
+        // Saves the listing and closes the form on success.
         OnConfirm({
             Title: title.trim(),
             Notes: notes.trim(),

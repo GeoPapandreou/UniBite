@@ -71,6 +71,7 @@ const LeaderboardPage = () => {
         const GetLeaderboard = async() => {
             try {
                 // fetch GET loads the related records used to calculate the leaderboard.
+                // Each resource reaches its GetAll controller; aggregation and sorting happen below in React.
                 const users = await fetch("/api/Unibite/users").then(Response => Response.json());
                 const listings = await fetch("/api/Unibite/listings").then(Response => Response.json());
                 const requests = await fetch("/api/Unibite/requests").then(Response => Response.json());
@@ -106,6 +107,7 @@ const LeaderboardPage = () => {
 
                 const mealRatings = {};
 
+                // Group scores under the correct listing.
                 ratings.forEach((Rating) => {
                     const request = requests.find((Request) => Request.id === Rating.requestId);
                     const listing = request

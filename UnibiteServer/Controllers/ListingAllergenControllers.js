@@ -10,6 +10,7 @@ const ErrorResponse = require("../utils/errorResponse");
  */
 exports.CreateNewListingAllergen = async (req, res, next) => {
 
+    // CreateListingButton sends the new listingId and one existing allergensId in each POST.
     let listingAllergen = new ListingAllergen(req.body.listingId, req.body.allergensId);
 
     // Gets the SQL query for creating the relationship

@@ -38,6 +38,7 @@ const GetRequests = async(CurrentUserId) => {
         fetch("/api/Unibite/ratings").then(Response => Response.json())
     ]);
 
+    // Match IDs across the fetched arrays to attach display details before choosing this user's requests.
     return requests.map(Request => {
         const listing = listings.find(Listing => Listing.id === Request.listingId);
         const requester = users.find(User => User.id === Request.consumerId);
@@ -63,6 +64,7 @@ const RequestsPage = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [requestToCancel, setRequestToCancel] = useState(null);
+    // null keeps the rating form closed; a selected request object supplies the ID for submission.
     const [requestToRate, setRequestToRate] = useState(null);
     const decisionInProgress = useRef(false);
 
@@ -195,6 +197,7 @@ const RequestsPage = () => {
      ** Saves the requester's rating and refreshes the cards without a page reload
      */
     const ConfirmRating = async(RatingData) => {
+        // RatingForm calls this; no selected request means there is no ID to rate.
         if(decisionInProgress.current || !requestToRate) return;
 
         const requestId = requestToRate.id;

@@ -99,12 +99,14 @@ const MyListingsPage = () => {
 
         try {
             // Reload current details before editing; requests determine whether pickup fields are locked.
+            // GET /listings/:id calls GetListingById; the other URLs call their GetAll controllers.
             const [listing, allergensData, links, requests] = await Promise.all([
                 fetch(`/api/Unibite/listings/${Listing.id}`).then(Response => Response.json()),
                 fetch("/api/Unibite/allergens").then(Response => Response.json()),
                 fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
                 fetch("/api/Unibite/requests").then(Response => Response.json())
             ]);
+
             if(Number(listing.cookId) !== Number(userData.id)) {
                 throw new Error("You can only edit your own listings.");
             }
@@ -142,7 +144,6 @@ const MyListingsPage = () => {
         setErrorMessage("");
 
         try {
-            // Omit photo when unchanged so the backend preserves the stored image.
             const photo = ListingData.Photo ? await Helpers.ReadListingPhoto(ListingData.Photo) : undefined;
             // fetch PUT saves the edited details and selected allergen IDs together in the backend.
             const response = await fetch(`/api/Unibite/listings/${editingListing.id}`, {
@@ -167,6 +168,7 @@ const MyListingsPage = () => {
             const updatedListing = await response.json();
             if(!response.ok) throw new Error(updatedListing.message || "Could not save the listing. Please try again.");
 
+            // map replaces only the matching card; spreading updatedListing copies the returned fields.
             setListings(ListingsData => ListingsData.map(Listing => Listing.id === updatedListing.id ? {
                 ...updatedListing,
                 status: GetListingStatus(updatedListing),
@@ -212,7 +214,7 @@ const MyListingsPage = () => {
         setErrorMessage("");
 
         try {
-            // fetch DELETE removes the listing; the backend refunds outstanding requests before deletion.
+            // fetch DELETE removes the listing and any related requests.
             const response = await fetch(`/api/Unibite/listings/${deletingListing.id}`, {
                 method: "DELETE",
                 headers: {"Content-Type": "application/json"},
@@ -222,7 +224,7 @@ const MyListingsPage = () => {
             const result = await response.json();
             if(!response.ok) throw new Error(result.message || "Could not delete the listing. Please try again.");
 
-            // Remove the card through React state only after the API confirms deletion.
+            // Remove the card only after the API confirms deletion.
             setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));
             setDeletingListing(null);
         }

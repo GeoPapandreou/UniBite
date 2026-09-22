@@ -19,8 +19,10 @@ const pageContainerStyle = {
 const LayoutPage = () => {
     const location = useLocation();
 
+    // Login and sidebar navigation pass these objects through navigate(..., {state: ...}).
     const {userData, adminData} = location.state;
 
+    // Outlet displays the selected child page while the header and sidebar remain shared.
     return(
         <>
             <HeaderBar Username={userData ? userData.username : adminData.username}/>

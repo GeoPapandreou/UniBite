@@ -12,7 +12,6 @@ const ErrorResponse = require("../utils/errorResponse");
  ** Gets all the users
  */
  exports.GetAllUsers = async (req, res, next) => {
-
     let query = User.GetAll();
 
     // Execute the query
@@ -26,6 +25,7 @@ const ErrorResponse = require("../utils/errorResponse");
  ** Creates a new user
  */
  exports.CreateNewUser =  async (req, res, next) => {
+    // RegisterPage's POST arrives here
     let universityId = Number(req.body?.universityId);
     let { firstName, lastName, email, username, password } = req.body || {};
 
@@ -76,6 +76,7 @@ const ErrorResponse = require("../utils/errorResponse");
  */
  exports.GetUserById = async (req, res, next) => {
 
+    // ProfilePage fetches /users/:id. SELECT returns rows, so result[0] below sends one user object.
     let query = User.GetById(req.params.id);
 
     var result = await GetQueryResultAsync(query);

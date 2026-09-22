@@ -26,6 +26,7 @@ exports.CreateNewAllergen = async (req, res, next) => {
  */
 exports.GetAllAllergens = async (req, res, next) => {
 
+    // Gets all the allergens
     let query = Allergen.GetAll();
 
     // Execute the query

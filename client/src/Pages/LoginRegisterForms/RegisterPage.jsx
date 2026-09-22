@@ -70,8 +70,10 @@ const RegisterPage = () => {
     useEffect(() => {
         // fetch GET fills the university selector with the database's universities.
         fetch("/api/Unibite/universities")
+            // Parse the HTTP body into JavaScript data, then store it.
             .then(Response => Response.json())
             .then(UniversitiesData => setUniversities(UniversitiesData))
+            // catch handles rejected operations; finally ends loading after success or failure.
             .catch(error => setErrorMessage(error.message))
             .finally(() => setIsLoading(false));
     }, []);
@@ -111,6 +113,7 @@ const RegisterPage = () => {
             const result = await response.json();
             if(!response.ok) throw new Error(result.message || "Could not create your account. Please try again.");
 
+            // Return to Login only after the API confirms the account was created.
             navigate("/");
         }
         catch(error) {

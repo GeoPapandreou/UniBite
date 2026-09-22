@@ -23,7 +23,6 @@ class Request{
      ** Creates a portion request
      */
     Create() {
-
         let dateTimeNow = ControllerHelpers.GetCurrentDateTime();
 
         let dateCreated = dateTimeNow;
@@ -70,6 +69,7 @@ class Request{
      ** Locks a request until its credit refund and cancellation finish
      */
     static GetByIdForUpdate(id) {
+        // Within a transaction, FOR UPDATE makes competing changes to this row wait until it finishes.
         return `SELECT * FROM requests WHERE id = ${id} FOR UPDATE;`;
     }
 

@@ -87,6 +87,7 @@ router
 router
   .route(Routes.ListingsRoute)
   .get(listingControllers.GetAllListings)
+  // CreateListingButton.jsx sends its POST here; continue in Controllers/ListingControllers.js.
   .post(listingControllers.CreateNewListing);
 
 /**
@@ -94,6 +95,7 @@ router
  */
 router
   .route(Routes.ListingRoute)
+  // :id is the listing ID in the URL; controllers read it through req.params.id.
   .get(listingControllers.GetListingById)
   .put(listingControllers.UpdateListingById)
   .delete(listingControllers.DeleteListingById);

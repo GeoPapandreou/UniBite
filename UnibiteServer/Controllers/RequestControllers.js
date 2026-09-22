@@ -27,6 +27,7 @@ exports.GetAllRequests = async (req, res, next) => {
  */
 exports.CreateNewRequest = async (req, res, next) => {
 
+    // Entry from HomePage's POST /api/Unibite/requests
     let listingId = Number(req.body.listingId);
     let consumerId = Number(req.body.consumerId);
     let portion = Number(req.body.portion);
@@ -41,6 +42,7 @@ exports.CreateNewRequest = async (req, res, next) => {
 
     // Check the current listing before creating a pending request.
     let listings = await GetQueryResultAsync(Listing.GetById(listingId));
+    // SELECT returns an array, including [] when nothing matches. Check before reading listings[0].
     if(listings.length === 0) {
         return res.status(404).json({ message: "This listing no longer exists." });
     }
@@ -85,6 +87,7 @@ exports.CreateNewRequest = async (req, res, next) => {
 
             // Deduct N credits for N portions now, while approval is still pending.
             let creditResult = await Query(Request.ReserveCredits(consumerId, portion));
+            // No affected row means the credit update did not apply. Throw triggers rollback.
             if(creditResult.affectedRows === 0) {
                 throw new ErrorResponse("You do not have enough credits for these portions.", 400);
             }
@@ -129,6 +132,7 @@ exports.UpdateRequestById = async (req, res, next) => {
  ** Accepts or declines a pending request for the listing owner
  */
 exports.UpdateRequestApproval = async (req, res, next) => {
+    // PATCH /requests/:id: params.id comes from the URL; the body carries cookId and the boolean decision.
     let id = Number(req.params.id);
     let cookId = Number(req.body.cookId);
     let isApproved = req.body.isApproved;
@@ -151,11 +155,13 @@ exports.UpdateRequestApproval = async (req, res, next) => {
         return res.status(403).json({ message: "Only the listing owner can accept or decline this request." });
     }
 
+    // null = pending, 0 = declined, 1 = accepted.
     if(requests[0].isApproved !== null) {
         return res.status(409).json({ message: "This request has already been accepted or declined." });
     }
 
     // The update checks ownership, pending status and portions again when saving.
+    // The model returns one joined UPDATE that changes the request and portions/refund together.
     let query = Request.UpdateApprovalById(id, cookId, isApproved);
     var result = await GetQueryResultAsync(query);
 
@@ -170,6 +176,7 @@ exports.UpdateRequestApproval = async (req, res, next) => {
  ** Records collection or a no show for the listing owner
  */
 exports.UpdateRequestDelivery = async (req, res, next) => {
+    // PATCH /requests/:id/delivery
     let id = Number(req.params.id);
     let cookId = Number(req.body?.cookId);
     let isDelivered = req.body?.isDelivered;
@@ -192,6 +199,7 @@ exports.UpdateRequestDelivery = async (req, res, next) => {
         return res.status(403).json({ message: "Only the listing owner can record collection or a no show." });
     }
 
+    // isDelivered null means awaiting collection; 0 and 1 are already recorded outcomes.
     if(Number(requests[0].isApproved) !== 1 || requests[0].isDelivered !== null) {
         return res.status(409).json({ message: "Only accepted requests awaiting pickup can be updated." });
     }
@@ -212,6 +220,7 @@ exports.UpdateRequestDelivery = async (req, res, next) => {
  */
 exports.DeleteRequestById = async (req, res, next) => {
 
+    // DELETE from RequestsPage. ?. avoids reading a property of a missing body;
     let id = Number(req.params.id);
     let consumerId = Number(req.body?.consumerId);
 

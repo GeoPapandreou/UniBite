@@ -40,6 +40,7 @@ const RatingForm = ({
     OnConfirm,
     OnClose
 }) => {
+    // null means no star has been selected yet; submitting requires a whole number from 1 to 5.
     const [rating, setRating] = useState(null);
     const isFormValid = Number.isInteger(rating) && rating >= 1 && rating <= 5;
 
@@ -52,6 +53,7 @@ const RatingForm = ({
 
     const ConfirmRating = () => {
         if(!isFormValid || IsSaving) return;
+
 
         OnConfirm({Rating: rating});
         // The parent closes the form after the rating is saved successfully.

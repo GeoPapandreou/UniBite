@@ -47,6 +47,7 @@ const profileTextStyle = {
 const ProfilePage = () => {
     const location = useLocation();
 
+    // Returns undefined if this page has no user data in navigation state.
     const userId = location.state?.userData?.id;
     const [userData, setUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(!!userId);

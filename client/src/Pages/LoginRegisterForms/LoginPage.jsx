@@ -62,11 +62,13 @@ const LoginPage = () => {
             const users = await fetch("/api/Unibite/users").then(Response => Response.json());
             const admins = await fetch("/api/Unibite/admins").then(Response => Response.json());
 
+            // find returns the matching account or undefined; the following if checks whether one exists.
             const userData = users.find((User) =>
                 User.username === username && User.password === password
             );
 
             if(userData) {
+                // Navigation state passes this object to the next page
                 navigate(`users/${userData.id}/home`, {
                     state: {userData: userData}
                 });

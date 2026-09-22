@@ -67,6 +67,7 @@ const RequestCard = ({
 }) => {
     const [currentTime, setCurrentTime] = useState(() => Date.now());
     const isAccepted = Number(IsApproved) === 1;
+    // null means no outcome yet; 0 means no-show
     const isAwaitingPickup = isAccepted && IsDelivered === null;
     const hasPickupPassed = new Date(PickupDateTime).getTime() <= currentTime;
     const collectionTime = new Date(DateCollected).getTime();

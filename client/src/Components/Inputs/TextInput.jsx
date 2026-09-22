@@ -39,6 +39,7 @@ const TextInput = ({
         Theme = theme,
         ThemeColor = "primary" 
     }) => {
+
     return(
         <div className="textInput" >
             <ThemeProvider theme={Theme}>

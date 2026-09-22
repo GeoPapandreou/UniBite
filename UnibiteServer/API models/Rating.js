@@ -19,7 +19,6 @@ class Rating{
      ** Creates a rating
      */
     Create() {
-
         // The 48-hour rating window starts at actual collection, not the scheduled pickup time.
         // Check it using database time at the moment the rating is saved.
         let query = `

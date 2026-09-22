@@ -63,6 +63,7 @@ const StatisticsPage = () => {
                 const lastMonth = new Date();
                 lastMonth.setMonth(lastMonth.getMonth() - 1);
 
+                // filter selects qualifying requests; reduce adds their portions starting from zero.
                 const portions = requests
                     .filter((Request) => {
                         const requestDate = new Date(Request.dateCollected || Request.dateUpdated);

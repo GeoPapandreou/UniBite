@@ -10,6 +10,7 @@ const ErrorResponse = require("../utils/errorResponse");
  */
 exports.GetAllUniversities = async (req, res, next) => {
 
+    // From RegisterPage's GET /universities 
     let query = University.GetAll();
 
     // Execute the query

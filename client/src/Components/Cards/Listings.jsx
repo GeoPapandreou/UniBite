@@ -30,6 +30,8 @@ const Listings = ({
         );
     }
 
+    // map creates one card per listing.
+    // () => OnOrder(Listing) waits for a click, then passes this card's listing to the page handler.
     return(
         <div className="listingsContainer" style={listingsContainerStyle}>
             {ListingsData.map((Listing) => (

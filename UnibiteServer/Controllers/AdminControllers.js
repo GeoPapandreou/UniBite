@@ -12,6 +12,7 @@ const ErrorResponse = require("../utils/errorResponse");
  */
  exports.GetAllAdmins = async (req, res, next) => {
 
+    // LoginPage fetches /admins.
     var query = `SELECT * FROM admins`;
 
     // Execute the query

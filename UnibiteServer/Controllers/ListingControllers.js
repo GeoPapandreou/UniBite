@@ -30,16 +30,18 @@ exports.GetAllListings = async (req, res, next) => {
  */
 exports.CreateNewListing = async (req, res, next) => {
 
-    // The optional photo is sent as a data URL and stored in the existing BLOB.
+    // Entry from POST /api/Unibite/listings 
     if(req.body.photo != null && (typeof req.body.photo !== "string" || Buffer.byteLength(req.body.photo) > 65535)) {
         return res.status(400).json({ message: "The photo is too large. Please choose a smaller image." });
     }
 
+    // Returning an error response ends this handler before any INSERT can run.
     let pickupDateTime = new Date(req.body.pickupDateTime);
     if(typeof req.body.pickupDateTime !== "string" || !Number.isFinite(pickupDateTime.getTime()) || pickupDateTime <= new Date()) {
         return res.status(400).json({ message: "Please choose a valid pickup date and time in the future." });
     }
 
+    // The constructor stores these values in a model object; creating the object does not save it.
     let listing = new Listing(req.body.cookId, req.body.title, req.body.notes,req.body.photo, req.body.portions, req.body.pickupLocation, req.body.latitude, req.body.longitude, req.body.isActive, ControllerHelpers.FormatDateTime(pickupDateTime));
 
     // Gets the SQL query for creating the listing
@@ -48,6 +50,7 @@ exports.CreateNewListing = async (req, res, next) => {
     // Execute the query
     var result = await GetQueryResultAsync(query);
 
+    // 201 means created
     res.status(201).json(result);
 };
 
@@ -108,6 +111,7 @@ exports.UpdateListingById = async (req, res, next) => {
     }
 
     try {
+        // Editing saves the listing and all links in one transaction.
         var result = await ExecuteTransactionAsync(async (Query) => {
             let listings = await Query(Listing.GetByIdForUpdate(id));
             if(listings.length === 0) throw new ErrorResponse("This listing no longer exists.", 404);
@@ -166,7 +170,8 @@ exports.UpdateListingById = async (req, res, next) => {
 /**
  ** Deletes the listing with the specified id
  */
-exports.DeleteListingById = async (req, res, next) => {
+exports.DeleteListingById = async (req, res) => {
+    // MyListingsPage sends cookId; the admin ListingsPage sends adminId to this same endpoint.
     let id = Number(req.params.id);
     let cookId = Number(req.body?.cookId);
     let adminId = Number(req.body?.adminId);
