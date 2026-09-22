@@ -33,17 +33,7 @@ const CreateListingButton = ({
 
         try {
             // fetch GET supplies the allergen choices from the database, not a hardcoded list.
-            const response = await fetch("/api/Unibite/allergens");
-
-            if(!response.ok) {
-                throw new Error("Could not get the allergens. Please try again.");
-            }
-
-            const allergensData = await response.json();
-
-            if(!Array.isArray(allergensData)) {
-                throw new Error("Could not get the allergens. Please try again.");
-            }
+            const allergensData = await fetch("/api/Unibite/allergens").then(Response => Response.json());
 
             setAllergens(allergensData);
             setIsCreateListingOpen(true);
@@ -94,12 +84,9 @@ const CreateListingButton = ({
                 })
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not save the listing. Please check that the backend is running.");
-            }
-
             const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not save the listing. Please check that the backend is running.");
+
             listingId = result.insertId;
 
             for(const AllergenId of ListingData.AllergenIds) {
@@ -110,9 +97,7 @@ const CreateListingButton = ({
                     body: JSON.stringify({listingId: listingId, allergensId: AllergenId})
                 });
 
-                if(!allergenResponse.ok) {
-                    throw new Error("Could not save the selected allergens.");
-                }
+                if(!allergenResponse.ok) throw new Error("Could not save the selected allergens.");
             }
         }
         catch(error) {

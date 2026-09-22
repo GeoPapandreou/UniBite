@@ -42,19 +42,11 @@ const GetListingPhoto = (Listing) => Listing.photo?.type === "Buffer"
  */
 const GetMyListings = async(CurrentUserId) => {
     // fetch GET loads the owner's cards, including listings hidden from the public feed by expiry.
-    const responses = await Promise.all([
-        fetch("/api/Unibite/listings"),
-        fetch("/api/Unibite/listingAllergens"),
-        fetch("/api/Unibite/allergens")
+    const [listings, listingAllergens, allergens] = await Promise.all([
+        fetch("/api/Unibite/listings").then(Response => Response.json()),
+        fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
+        fetch("/api/Unibite/allergens").then(Response => Response.json())
     ]);
-
-    if(responses.some(Response => !Response.ok)) {
-        throw new Error("Could not load your listings. Please open the page again.");
-    }
-
-    const [listings, listingAllergens, allergens] = await Promise.all(
-        responses.map(Response => Response.json())
-    );
 
     return listings.filter(Listing => Number(Listing.cookId) === Number(CurrentUserId)).map(Listing => ({
         ...Listing,
@@ -82,20 +74,10 @@ const MyListingsPage = () => {
     const actionInProgress = useRef(false);
 
     useEffect(() => {
-        let isMounted = true;
-
         GetMyListings(userData.id)
-            .then(ListingsData => {
-                if(isMounted) setListings(ListingsData);
-            })
-            .catch(error => {
-                if(isMounted) setErrorMessage(error.message);
-            })
-            .finally(() => {
-                if(isMounted) setIsLoading(false);
-            });
-
-        return () => { isMounted = false; };
+            .then(ListingsData => setListings(ListingsData))
+            .catch(error => setErrorMessage(error.message))
+            .finally(() => setIsLoading(false));
     }, [userData.id]);
 
     /**
@@ -117,18 +99,12 @@ const MyListingsPage = () => {
 
         try {
             // Reload current details before editing; requests determine whether pickup fields are locked.
-            const responses = await Promise.all([
-                fetch(`/api/Unibite/listings/${Listing.id}`),
-                fetch("/api/Unibite/allergens"),
-                fetch("/api/Unibite/listingAllergens"),
-                fetch("/api/Unibite/requests")
+            const [listing, allergensData, links, requests] = await Promise.all([
+                fetch(`/api/Unibite/listings/${Listing.id}`).then(Response => Response.json()),
+                fetch("/api/Unibite/allergens").then(Response => Response.json()),
+                fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
+                fetch("/api/Unibite/requests").then(Response => Response.json())
             ]);
-
-            if(responses.some(Response => !Response.ok)) {
-                throw new Error("Could not load this listing for editing. Please try again.");
-            }
-
-            const [listing, allergensData, links, requests] = await Promise.all(responses.map(Response => Response.json()));
             if(Number(listing.cookId) !== Number(userData.id)) {
                 throw new Error("You can only edit your own listings.");
             }
@@ -188,12 +164,9 @@ const MyListingsPage = () => {
                 })
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not save the listing. Please try again.");
-            }
-
             const updatedListing = await response.json();
+            if(!response.ok) throw new Error(updatedListing.message || "Could not save the listing. Please try again.");
+
             setListings(ListingsData => ListingsData.map(Listing => Listing.id === updatedListing.id ? {
                 ...updatedListing,
                 status: GetListingStatus(updatedListing),
@@ -246,10 +219,8 @@ const MyListingsPage = () => {
                 body: JSON.stringify({cookId: userData.id})
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not delete the listing. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not delete the listing. Please try again.");
 
             // Remove the card through React state only after the API confirms deletion.
             setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));

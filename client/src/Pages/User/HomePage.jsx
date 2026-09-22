@@ -37,22 +37,14 @@ const messageStyle = {
  ** Gets the listings and their allergens for the user's university
  */
 const GetListings = async(UniversityId) => {
-    // fetch GET loads the related API data; Promise.all waits for all four responses.
-    const responses = await Promise.all([
-        fetch("/api/Unibite/listings"),
-        fetch("/api/Unibite/listingAllergens"),
-        fetch("/api/Unibite/allergens"),
-        fetch("/api/Unibite/users")
+    // fetch GET loads the related data; Promise.all waits for all four responses.
+    // Convert the JSON response bodies into JavaScript arrays.
+    const [listings, listingAllergens, allergens, users] = await Promise.all([
+        fetch("/api/Unibite/listings").then(Response => Response.json()),
+        fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
+        fetch("/api/Unibite/allergens").then(Response => Response.json()),
+        fetch("/api/Unibite/users").then(Response => Response.json())
     ]);
-
-    if(responses.some(Response => !Response.ok)) {
-        throw new Error("Could not load the listings. Please refresh the page.");
-    }
-
-    // Convert the JSON response bodies into JavaScript arrays used by the cards.
-    const [listings, listingAllergens, allergens, users] = await Promise.all(
-        responses.map(Response => Response.json())
-    );
 
     // Show only active listings under 48 hours old from this university; database rows are kept.
     return listings.filter(Listing => Listing.isActive &&
@@ -81,18 +73,10 @@ const HomePage = () => {
     const [orderMessage, setOrderMessage] = useState("");
 
     useEffect(() => {
-        let isMounted = true;
-
         GetListings(userData.universityId)
-            .then(ListingsData => {
-                if(isMounted) setListings(ListingsData);
-            })
-            .catch(error => {
-                if(isMounted) setErrorMessage(error.message);
-            })
-            .finally(() => {
-                if(isMounted) setIsLoading(false);
-            });
+            .then(ListingsData => setListings(ListingsData))
+            .catch(error => setErrorMessage(error.message))
+            .finally(() => setIsLoading(false));
 
         // Remove newly expired listings while the homepage stays open.
         const expiryCheck = setInterval(() => {
@@ -101,10 +85,7 @@ const HomePage = () => {
             ));
         }, 60 * 1000);
 
-        return () => {
-            isMounted = false;
-            clearInterval(expiryCheck);
-        };
+        return () => clearInterval(expiryCheck);
     }, [userData.universityId]);
 
     /**
@@ -152,10 +133,8 @@ const HomePage = () => {
                 })
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not send the request. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not send the request. Please try again.");
 
             CloseOrderForm();
             setOrderMessage("Your request was sent and is waiting for the cook to approve it.");

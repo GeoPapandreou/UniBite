@@ -229,7 +229,7 @@ class Request{
     }
 
     /**
-     ** Accepts or declines a pending request for the specified cook
+     ** Accepts or declines a pending request
      * @param {int} id The request id
      * @param {int} cookId The listing owner id
      * @param {boolean} isApproved True = accept, False = decline

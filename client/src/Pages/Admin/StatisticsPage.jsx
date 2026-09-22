@@ -59,13 +59,7 @@ const StatisticsPage = () => {
         const GetStatistics = async() => {
             try {
                 // fetch GET loads requests; the calculation below sums collected portions, not order count.
-                const response = await fetch("/api/Unibite/requests");
-
-                if(!response.ok) {
-                    throw new Error("Could not get the statistics.");
-                }
-
-                const requests = await response.json();
+                const requests = await fetch("/api/Unibite/requests").then(Response => Response.json());
                 const lastMonth = new Date();
                 lastMonth.setMonth(lastMonth.getMonth() - 1);
 

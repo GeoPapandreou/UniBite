@@ -30,19 +30,11 @@ const titleStyle = {
  */
 const GetListings = async() => {
     // fetch GET loads all listings for admin review; expired listings are not filtered out here.
-    const responses = await Promise.all([
-        fetch("/api/Unibite/listings"),
-        fetch("/api/Unibite/listingAllergens"),
-        fetch("/api/Unibite/allergens")
+    const [listings, listingAllergens, allergens] = await Promise.all([
+        fetch("/api/Unibite/listings").then(Response => Response.json()),
+        fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
+        fetch("/api/Unibite/allergens").then(Response => Response.json())
     ]);
-
-    if(responses.some(Response => !Response.ok)) {
-        throw new Error("Could not load the listings. Please open the page again.");
-    }
-
-    const [listings, listingAllergens, allergens] = await Promise.all(
-        responses.map(Response => Response.json())
-    );
 
     return listings.map(Listing => ({
         ...Listing,
@@ -71,20 +63,10 @@ const ListingsPage = () => {
     const actionInProgress = useRef(false);
 
     useEffect(() => {
-        let isMounted = true;
-
         GetListings()
-            .then(ListingsData => {
-                if(isMounted) setListings(ListingsData);
-            })
-            .catch(error => {
-                if(isMounted) setErrorMessage(error.message);
-            })
-            .finally(() => {
-                if(isMounted) setIsLoading(false);
-            });
-
-        return () => { isMounted = false; };
+            .then(ListingsData => setListings(ListingsData))
+            .catch(error => setErrorMessage(error.message))
+            .finally(() => setIsLoading(false));
     }, []);
 
     const OpenDeleteListing = (Listing) => {
@@ -115,10 +97,8 @@ const ListingsPage = () => {
                 body: JSON.stringify({adminId: adminData.id})
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not delete the listing. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not delete the listing. Please try again.");
 
             // Update the displayed cards without reloading the page after a successful deletion.
             setListings(ListingsData => ListingsData.filter(Listing => Listing.id !== deletingListing.id));

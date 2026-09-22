@@ -56,28 +56,12 @@ const ProfilePage = () => {
     useEffect(() => {
         if(!userId) return;
 
-        let isMounted = true;
-
         // fetch GET reads the latest credits instead of displaying the balance saved at login.
         fetch(`/api/Unibite/users/${userId}`)
-            .then(Response => {
-                if(!Response.ok) {
-                    throw new Error("Could not load your profile. Please try opening it again.");
-                }
-
-                return Response.json();
-            })
-            .then(UserData => {
-                if(isMounted) setUserData(UserData);
-            })
-            .catch(error => {
-                if(isMounted) setErrorMessage(error.message);
-            })
-            .finally(() => {
-                if(isMounted) setIsLoading(false);
-            });
-
-        return () => { isMounted = false; };
+            .then(Response => Response.json())
+            .then(UserData => setUserData(UserData))
+            .catch(error => setErrorMessage(error.message))
+            .finally(() => setIsLoading(false));
     }, [userId]);
 
     return(

@@ -71,20 +71,10 @@ const LeaderboardPage = () => {
         const GetLeaderboard = async() => {
             try {
                 // fetch GET loads the related records used to calculate the leaderboard.
-                const usersResponse = await fetch("/api/Unibite/users");
-                const listingsResponse = await fetch("/api/Unibite/listings");
-                const requestsResponse = await fetch("/api/Unibite/requests");
-                const ratingsResponse = await fetch("/api/Unibite/ratings");
-
-                if(!usersResponse.ok || !listingsResponse.ok ||
-                    !requestsResponse.ok || !ratingsResponse.ok) {
-                    throw new Error("Could not get the leaderboard data.");
-                }
-
-                const users = await usersResponse.json();
-                const listings = await listingsResponse.json();
-                const requests = await requestsResponse.json();
-                const ratings = await ratingsResponse.json();
+                const users = await fetch("/api/Unibite/users").then(Response => Response.json());
+                const listings = await fetch("/api/Unibite/listings").then(Response => Response.json());
+                const requests = await fetch("/api/Unibite/requests").then(Response => Response.json());
+                const ratings = await fetch("/api/Unibite/ratings").then(Response => Response.json());
 
                 // Rank cooks by portions actually collected, not by their current credit balance.
                 const donorPortions = {};

@@ -66,27 +66,14 @@ const RegisterPage = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const registrationInProgress = useRef(false);
 
-    // Load the universities from the database, not a fixed frontend list.
+    // Load the universities from the database.
     useEffect(() => {
-        let isMounted = true;
-
         // fetch GET fills the university selector with the database's universities.
         fetch("/api/Unibite/universities")
-            .then(Response => {
-                if(!Response.ok) throw new Error("Could not load the universities. Please open registration again.");
-                return Response.json();
-            })
-            .then(UniversitiesData => {
-                if(isMounted) setUniversities(UniversitiesData);
-            })
-            .catch(error => {
-                if(isMounted) setErrorMessage(error.message);
-            })
-            .finally(() => {
-                if(isMounted) setIsLoading(false);
-            });
-
-        return () => { isMounted = false; };
+            .then(Response => Response.json())
+            .then(UniversitiesData => setUniversities(UniversitiesData))
+            .catch(error => setErrorMessage(error.message))
+            .finally(() => setIsLoading(false));
     }, []);
 
     const isFormValid = universityId !== "" &&
@@ -121,10 +108,8 @@ const RegisterPage = () => {
                 })
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not create your account. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not create your account. Please try again.");
 
             navigate("/");
         }

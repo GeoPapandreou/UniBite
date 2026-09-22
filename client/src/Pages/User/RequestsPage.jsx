@@ -31,20 +31,12 @@ const titleStyle = {
  */
 const GetRequests = async(CurrentUserId) => {
     // fetch GET loads requests and the related data needed for names, listings and ratings.
-    const responses = await Promise.all([
-        fetch("/api/Unibite/requests"),
-        fetch("/api/Unibite/listings"),
-        fetch("/api/Unibite/users"),
-        fetch("/api/Unibite/ratings")
+    const [requests, listings, users, ratings] = await Promise.all([
+        fetch("/api/Unibite/requests").then(Response => Response.json()),
+        fetch("/api/Unibite/listings").then(Response => Response.json()),
+        fetch("/api/Unibite/users").then(Response => Response.json()),
+        fetch("/api/Unibite/ratings").then(Response => Response.json())
     ]);
-
-    if(responses.some(Response => !Response.ok)) {
-        throw new Error("Could not load the requests. Please refresh the page.");
-    }
-
-    const [requests, listings, users, ratings] = await Promise.all(
-        responses.map(Response => Response.json())
-    );
 
     return requests.map(Request => {
         const listing = listings.find(Listing => Listing.id === Request.listingId);
@@ -75,20 +67,10 @@ const RequestsPage = () => {
     const decisionInProgress = useRef(false);
 
     useEffect(() => {
-        let isMounted = true;
-
         GetRequests(userData.id)
-            .then(RequestsData => {
-                if(isMounted) setRequests(RequestsData);
-            })
-            .catch(error => {
-                if(isMounted) setErrorMessage(error.message);
-            })
-            .finally(() => {
-                if(isMounted) setIsLoading(false);
-            });
-
-        return () => { isMounted = false; };
+            .then(RequestsData => setRequests(RequestsData))
+            .catch(error => setErrorMessage(error.message))
+            .finally(() => setIsLoading(false));
     }, [userData.id]);
 
     // Close an open rating form when its 48-hour window ends.
@@ -119,10 +101,8 @@ const RequestsPage = () => {
                 body: JSON.stringify({cookId: userData.id, isApproved: IsApproved})
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not save the decision. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not save the decision. Please try again.");
 
             // React state updates the card without a page reload, even if the next GET fails.
             setRequests(RequestsData => RequestsData.map(Item => Item.id === Request.id
@@ -167,10 +147,8 @@ const RequestsPage = () => {
                 body: JSON.stringify({cookId: userData.id, isDelivered: IsDelivered})
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not save the collection outcome. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not save the collection outcome. Please try again.");
 
             // Keep the saved outcome even if the following refresh fails.
             setRequests(RequestsData => RequestsData.map(Item => Item.id === Request.id
@@ -236,10 +214,8 @@ const RequestsPage = () => {
                 })
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not save your rating. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not save your rating. Please try again.");
 
             // Keep the saved rating even if the following refresh fails.
             setRequests(RequestsData => RequestsData.map(Request => Request.id === requestId
@@ -291,10 +267,8 @@ const RequestsPage = () => {
                 body: JSON.stringify({consumerId: userData.id})
             });
 
-            if(!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || "Could not cancel the request. Please try again.");
-            }
+            const result = await response.json();
+            if(!response.ok) throw new Error(result.message || "Could not cancel the request. Please try again.");
 
             setRequests(RequestsData => RequestsData.filter(Request => Request.id !== requestId));
 

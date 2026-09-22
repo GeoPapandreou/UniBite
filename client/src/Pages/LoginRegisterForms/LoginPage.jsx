@@ -54,20 +54,13 @@ const LoginPage = () => {
     const isFormValid = username !== "" && password !== "";
 
     /**
-     ** Logs in the user or admin if the credentials are correct
+     ** Logs in the user or admin
      */
     const LoginButton_OnClick = async() => {
         try {
-            // fetch GET loads accounts; this implementation compares credentials in the frontend below.
-            const usersResponse = await fetch("/api/Unibite/users");
-            const adminsResponse = await fetch("/api/Unibite/admins");
-
-            if(!usersResponse.ok || !adminsResponse.ok) {
-                throw new Error("Could not connect to the server.");
-            }
-
-            const users = await usersResponse.json();
-            const admins = await adminsResponse.json();
+            // fetch GET loads accounts; compares credentials in the frontend.
+            const users = await fetch("/api/Unibite/users").then(Response => Response.json());
+            const admins = await fetch("/api/Unibite/admins").then(Response => Response.json());
 
             const userData = users.find((User) =>
                 User.username === username && User.password === password
