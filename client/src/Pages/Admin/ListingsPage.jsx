@@ -29,7 +29,7 @@ const titleStyle = {
  ** Gets all stored listings for the admin, including expired listings
  */
 const GetListings = async() => {
-    // fetch GET loads all listings for admin review; expired listings are not filtered out here.
+    // fetch GET loads all listings;
     const [listings, listingAllergens, allergens] = await Promise.all([
         fetch("/api/Unibite/listings").then(Response => Response.json()),
         fetch("/api/Unibite/listingAllergens").then(Response => Response.json()),
