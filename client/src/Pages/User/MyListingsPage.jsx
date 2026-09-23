@@ -249,7 +249,10 @@ const MyListingsPage = () => {
             />
 
             {isLoading ? <Loading/> : errorMessage === "" && (
-                <Listings ListingsData={listings} OnEdit={OpenEditListing} OnDelete={OpenDeleteListing} IsSaving={isSaving}/>
+                <Listings ListingsData={listings} 
+                OnEdit={OpenEditListing} 
+                OnDelete={OpenDeleteListing} 
+                IsSaving={isSaving}/>
             )}
 
             {editingListing && (
